@@ -1,20 +1,26 @@
 import AppKit
 import SwiftUI
 
+@MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var buddyPanel: BuddyPanel?
     private var statusItem: NSStatusItem?
 
-    private let buddyViewModel = BuddyViewModel()
+    private let animationEngine = AnimationEngine()
+
+    private lazy var buddyViewModel = BuddyViewModel(
+        animationEngine: animationEngine
+    )
+
     private var reminderManager: ReminderManager!
-    
+
     func applicationDidFinishLaunching(
         _ notification: Notification
     ) {
         reminderManager = ReminderManager(
             buddyViewModel: buddyViewModel
         )
-        
+
         reminderManager.onReminderTriggered = { [weak self] in
             self?.buddyPanel?.orderFrontRegardless()
         }
@@ -38,6 +44,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panel.contentView = NSHostingView(
             rootView: BuddyView(
                 viewModel: buddyViewModel,
+                animationEngine: animationEngine,
                 reminderManager: reminderManager
             )
         )
@@ -61,7 +68,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         let menu = NSMenu()
-        
+
         let reminderItem = NSMenuItem(
             title: "Test Reminder (10 sec)",
             action: #selector(testReminder),
@@ -69,7 +76,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
 
         reminderItem.target = self
-
         menu.addItem(reminderItem)
 
         menu.addItem(.separator())
@@ -79,6 +85,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             action: #selector(showBuddy),
             keyEquivalent: ""
         )
+
         showItem.target = self
         menu.addItem(showItem)
 
@@ -87,6 +94,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             action: #selector(hideBuddy),
             keyEquivalent: ""
         )
+
         hideItem.target = self
         menu.addItem(hideItem)
 
@@ -97,19 +105,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             action: #selector(quitBuddy),
             keyEquivalent: "q"
         )
+
         quitItem.target = self
         menu.addItem(quitItem)
 
         item.menu = menu
         statusItem = item
-    }
-
-    @objc private func showBuddy() {
-        buddyPanel?.orderFrontRegardless()
-    }
-
-    @objc private func hideBuddy() {
-        buddyPanel?.orderOut(nil)
     }
 
     @objc
@@ -130,8 +131,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         buddyPanel?.orderFrontRegardless()
     }
-    
-    @objc private func quitBuddy() {
+
+    @objc
+    private func showBuddy() {
+        buddyPanel?.orderFrontRegardless()
+    }
+
+    @objc
+    private func hideBuddy() {
+        buddyPanel?.orderOut(nil)
+    }
+
+    @objc
+    private func quitBuddy() {
         NSApplication.shared.terminate(nil)
     }
 }
