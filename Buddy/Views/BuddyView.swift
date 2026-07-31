@@ -2,8 +2,10 @@ import SwiftUI
 
 struct BuddyView: View {
     @ObservedObject var viewModel: BuddyViewModel
+    @ObservedObject var animationEngine: AnimationEngine
+
     let reminderManager: ReminderManager
-    
+
     @State private var isHovering = false
 
     var body: some View {
@@ -12,7 +14,10 @@ struct BuddyView: View {
 
             buddyCharacter
         }
-        .frame(width: 260, height: 280)
+        .frame(
+            width: 280,
+            height: 300
+        )
         .contentShape(Rectangle())
         .animation(
             .spring(response: 0.35),
@@ -38,12 +43,19 @@ struct BuddyView: View {
 
     private var idleBubble: some View {
         Text("Hi! I'm Buddy 👋")
-            .font(.system(size: 14, weight: .medium))
+            .font(
+                .system(
+                    size: 14,
+                    weight: .medium
+                )
+            )
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
             .background(
-                RoundedRectangle(cornerRadius: 14)
-                    .fill(.regularMaterial)
+                RoundedRectangle(
+                    cornerRadius: 14
+                )
+                .fill(.regularMaterial)
             )
             .transition(
                 .move(edge: .bottom)
@@ -55,11 +67,17 @@ struct BuddyView: View {
         _ reminder: Reminder
     ) -> some View {
         VStack(spacing: 10) {
-            HStack(alignment: .top, spacing: 8) {
+            HStack(
+                alignment: .top,
+                spacing: 8
+            ) {
                 Text(reminder.type.icon)
                     .font(.title2)
 
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(
+                    alignment: .leading,
+                    spacing: 4
+                ) {
                     Text(reminder.title)
                         .font(.headline)
 
@@ -96,13 +114,15 @@ struct BuddyView: View {
         .padding(12)
         .frame(width: 250)
         .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(.regularMaterial)
-                .shadow(
-                    color: .black.opacity(0.15),
-                    radius: 8,
-                    y: 4
-                )
+            RoundedRectangle(
+                cornerRadius: 16
+            )
+            .fill(.regularMaterial)
+            .shadow(
+                color: .black.opacity(0.15),
+                radius: 8,
+                y: 4
+            )
         )
         .transition(
             .move(edge: .bottom)
@@ -114,14 +134,21 @@ struct BuddyView: View {
         _ message: String
     ) -> some View {
         Text(message)
-            .font(.system(size: 14, weight: .medium))
+            .font(
+                .system(
+                    size: 14,
+                    weight: .medium
+                )
+            )
             .multilineTextAlignment(.center)
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
             .frame(maxWidth: 240)
             .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(.regularMaterial)
+                RoundedRectangle(
+                    cornerRadius: 16
+                )
+                .fill(.regularMaterial)
             )
             .transition(
                 .scale
@@ -132,8 +159,16 @@ struct BuddyView: View {
     private var buddyCharacter: some View {
         ZStack {
             Circle()
-                .fill(characterColor.gradient)
-                .frame(width: 130, height: 130)
+                .fill(
+                    animationEngine
+                        .currentAnimation
+                        .color
+                        .gradient
+                )
+                .frame(
+                    width: 130,
+                    height: 130
+                )
                 .shadow(
                     color: .black.opacity(0.2),
                     radius: 8,
@@ -141,8 +176,12 @@ struct BuddyView: View {
                 )
 
             VStack(spacing: 8) {
-                Text(characterEmoji)
-                    .font(.system(size: 58))
+                Text(
+                    animationEngine
+                        .currentAnimation
+                        .emoji
+                )
+                .font(.system(size: 58))
 
                 Text("Buddy")
                     .font(
@@ -154,63 +193,51 @@ struct BuddyView: View {
                     .foregroundStyle(.white)
             }
         }
-        .scaleEffect(characterScale)
+        .scaleEffect(
+            animationEngine.currentAnimation.scale
+            * (isHovering ? 1.04 : 1)
+        )
+        .rotationEffect(
+            .degrees(
+                animationEngine
+                    .currentAnimation
+                    .rotation
+            )
+        )
+        .animation(
+            .spring(
+                response: 0.35,
+                dampingFraction: 0.6
+            ),
+            value: animationEngine.currentAnimation
+        )
         .onHover { hovering in
             withAnimation {
                 isHovering = hovering
             }
         }
     }
-
-    private var characterEmoji: String {
-        switch viewModel.state {
-        case .idle:
-            return "🤖"
-
-        case .reminder:
-            return "👋"
-
-        case .happy:
-            return "🥳"
-        }
-    }
-
-    private var characterColor: Color {
-        switch viewModel.state {
-        case .idle:
-            return .blue
-
-        case .reminder:
-            return .orange
-
-        case .happy:
-            return .green
-        }
-    }
-
-    private var characterScale: CGFloat {
-        switch viewModel.state {
-        case .idle:
-            return isHovering ? 1.06 : 1
-
-        case .reminder:
-            return 1.08
-
-        case .happy:
-            return 1.14
-        }
-    }
 }
 
 #Preview {
-    let viewModel = BuddyViewModel()
+    let animationEngine = AnimationEngine()
+
+    let viewModel = BuddyViewModel(
+        animationEngine: animationEngine
+    )
 
     BuddyView(
         viewModel: viewModel,
+        animationEngine: animationEngine,
         reminderManager: ReminderManager(
             buddyViewModel: viewModel
         )
     )
-    .frame(width: 280, height: 300)
-    .background(.gray.opacity(0.3))
+    .frame(
+        width: 280,
+        height: 300
+    )
+    .background(
+        .gray.opacity(0.3)
+    )
 }
