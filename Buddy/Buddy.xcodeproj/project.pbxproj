@@ -6,6 +6,19 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		C1A55694301C2A120046A637 /* BuddyApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A55693301C2A120046A637 /* BuddyApp.swift */; };
+		C1A55696301C2A120046A637 /* BuddyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A55695301C2A120046A637 /* BuddyView.swift */; };
+		C1A556BC301C2B920046A637 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A556BA301C2B8F0046A637 /* AppDelegate.swift */; };
+		C1A556BF301C2BC30046A637 /* BuddyPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A556BD301C2BC20046A637 /* BuddyPanel.swift */; };
+		C1A556C2301C2C1D0046A637 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A556C0301C2C1A0046A637 /* SettingsView.swift */; };
+		C1A556C5301C2EF00046A637 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A556C3301C2EEE0046A637 /* NotificationManager.swift */; };
+		C1A556C8301C316E0046A637 /* BuddyState.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A556C6301C316C0046A637 /* BuddyState.swift */; };
+		C1A556CB301C31900046A637 /* Reminder.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A556C9301C318E0046A637 /* Reminder.swift */; };
+		C1A556CE301C31AF0046A637 /* BuddyViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A556CC301C31AC0046A637 /* BuddyViewModel.swift */; };
+		C1A556D1301C34860046A637 /* ReminderManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A556CF301C34830046A637 /* ReminderManager.swift */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		C1A5569E301C2A140046A637 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -25,8 +38,18 @@
 
 /* Begin PBXFileReference section */
 		C1A55690301C2A120046A637 /* Buddy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Buddy.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C1A55693301C2A120046A637 /* BuddyApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuddyApp.swift; sourceTree = "<group>"; };
+		C1A55695301C2A120046A637 /* BuddyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuddyView.swift; sourceTree = "<group>"; };
 		C1A5569D301C2A140046A637 /* BuddyTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BuddyTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		C1A556A7301C2A140046A637 /* BuddyUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BuddyUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		C1A556BA301C2B8F0046A637 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		C1A556BD301C2BC20046A637 /* BuddyPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuddyPanel.swift; sourceTree = "<group>"; };
+		C1A556C0301C2C1A0046A637 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		C1A556C3301C2EEE0046A637 /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
+		C1A556C6301C316C0046A637 /* BuddyState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuddyState.swift; sourceTree = "<group>"; };
+		C1A556C9301C318E0046A637 /* Reminder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Reminder.swift; sourceTree = "<group>"; };
+		C1A556CC301C31AC0046A637 /* BuddyViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuddyViewModel.swift; sourceTree = "<group>"; };
+		C1A556CF301C34830046A637 /* ReminderManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReminderManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -75,7 +98,14 @@
 		C1A55687301C2A120046A637 = {
 			isa = PBXGroup;
 			children = (
-				C1A55692301C2A120046A637 /* Buddy */,
+				C1A556D9301C399D0046A637 /* Assets.xcassets */,
+				C1A556D8301C39880046A637 /* Resources */,
+				C1A556D7301C39810046A637 /* Windows */,
+				C1A556D6301C39750046A637 /* Views */,
+				C1A556D5301C396B0046A637 /* ViewModels */,
+				C1A556D4301C395E0046A637 /* Managers */,
+				C1A556D3301C39540046A637 /* Models */,
+				C1A556D2301C39300046A637 /* App */,
 				C1A556A0301C2A140046A637 /* BuddyTests */,
 				C1A556AA301C2A140046A637 /* BuddyUITests */,
 				C1A55691301C2A120046A637 /* Products */,
@@ -90,6 +120,73 @@
 				C1A556A7301C2A140046A637 /* BuddyUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		C1A556D2301C39300046A637 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				C1A55692301C2A120046A637 /* Buddy */,
+				C1A55693301C2A120046A637 /* BuddyApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		C1A556D3301C39540046A637 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				C1A556C9301C318E0046A637 /* Reminder.swift */,
+				C1A556C6301C316C0046A637 /* BuddyState.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		C1A556D4301C395E0046A637 /* Managers */ = {
+			isa = PBXGroup;
+			children = (
+				C1A556CF301C34830046A637 /* ReminderManager.swift */,
+				C1A556C3301C2EEE0046A637 /* NotificationManager.swift */,
+			);
+			path = Managers;
+			sourceTree = "<group>";
+		};
+		C1A556D5301C396B0046A637 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				C1A556CC301C31AC0046A637 /* BuddyViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		C1A556D6301C39750046A637 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				C1A556C0301C2C1A0046A637 /* SettingsView.swift */,
+				C1A55695301C2A120046A637 /* BuddyView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		C1A556D7301C39810046A637 /* Windows */ = {
+			isa = PBXGroup;
+			children = (
+				C1A556BA301C2B8F0046A637 /* AppDelegate.swift */,
+				C1A556BD301C2BC20046A637 /* BuddyPanel.swift */,
+			);
+			path = Windows;
+			sourceTree = "<group>";
+		};
+		C1A556D8301C39880046A637 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		C1A556D9301C399D0046A637 /* Assets.xcassets */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Assets.xcassets;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -236,6 +333,16 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C1A556C5301C2EF00046A637 /* NotificationManager.swift in Sources */,
+				C1A556D1301C34860046A637 /* ReminderManager.swift in Sources */,
+				C1A556C2301C2C1D0046A637 /* SettingsView.swift in Sources */,
+				C1A556CE301C31AF0046A637 /* BuddyViewModel.swift in Sources */,
+				C1A556BC301C2B920046A637 /* AppDelegate.swift in Sources */,
+				C1A55696301C2A120046A637 /* BuddyView.swift in Sources */,
+				C1A556C8301C316E0046A637 /* BuddyState.swift in Sources */,
+				C1A55694301C2A120046A637 /* BuddyApp.swift in Sources */,
+				C1A556BF301C2BC30046A637 /* BuddyPanel.swift in Sources */,
+				C1A556CB301C31900046A637 /* Reminder.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
