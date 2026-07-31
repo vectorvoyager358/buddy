@@ -17,7 +17,9 @@ final class NotificationManager {
                 return
             }
 
-            print("Notification permission granted: \(granted)")
+            print(
+                "Notification permission granted: \(granted)"
+            )
         }
     }
 
@@ -27,7 +29,9 @@ final class NotificationManager {
     ) {
         let content = UNMutableNotificationContent()
 
-        content.title = "\(reminder.type.icon) \(reminder.title)"
+        content.title =
+            "\(reminder.type.icon) \(reminder.title)"
+
         content.body = reminder.message
         content.sound = .default
 
@@ -42,12 +46,27 @@ final class NotificationManager {
             trigger: trigger
         )
 
-        UNUserNotificationCenter.current().add(request) { error in
-            if let error {
-                print(
-                    "Unable to schedule notification: \(error.localizedDescription)"
-                )
+        UNUserNotificationCenter.current()
+            .add(request) { error in
+                if let error {
+                    print(
+                        "Unable to schedule notification: \(error.localizedDescription)"
+                    )
+                }
             }
-        }
+    }
+
+    func cancel(reminderID: UUID) {
+        UNUserNotificationCenter.current()
+            .removePendingNotificationRequests(
+                withIdentifiers: [
+                    reminderID.uuidString
+                ]
+            )
+    }
+
+    func cancelAll() {
+        UNUserNotificationCenter.current()
+            .removeAllPendingNotificationRequests()
     }
 }

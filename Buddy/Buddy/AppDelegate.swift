@@ -4,11 +4,24 @@ import SwiftUI
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var buddyPanel: BuddyPanel?
     private var statusItem: NSStatusItem?
-    private let buddyViewModel = BuddyViewModel()
 
-    func applicationDidFinishLaunching(_ notification: Notification) {
+    private let buddyViewModel = BuddyViewModel()
+    private var reminderManager: ReminderManager!
+    
+    func applicationDidFinishLaunching(
+        _ notification: Notification
+    ) {
+        reminderManager = ReminderManager(
+            buddyViewModel: buddyViewModel
+        )
+        
+        reminderManager.onReminderTriggered = { [weak self] in
+            self?.buddyPanel?.orderFrontRegardless()
+        }
+
         createBuddyPanel()
         createMenuBarItem()
+
         NotificationManager.shared.requestPermission()
     }
 
@@ -24,7 +37,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         panel.contentView = NSHostingView(
             rootView: BuddyView(
-                viewModel: buddyViewModel
+                viewModel: buddyViewModel,
+                reminderManager: reminderManager
             )
         )
 
@@ -102,27 +116,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func testReminder() {
         let reminder = Reminder(
             title: "Drink Water",
-            message: "You've been coding for a while. Let's grab some water!",
+            message: """
+            You've been coding for a while. \
+            Let's grab some water!
+            """,
             type: .water
         )
 
-        NotificationManager.shared.sendReminder(
+        reminderManager.schedule(
             reminder,
             after: 10
         )
 
-        Task {
-            try? await Task.sleep(
-                for: .seconds(10)
-            )
-
-            guard !Task.isCancelled else {
-                return
-            }
-
-            buddyPanel?.orderFrontRegardless()
-            buddyViewModel.showReminder(reminder)
-        }
+        buddyPanel?.orderFrontRegardless()
     }
     
     @objc private func quitBuddy() {

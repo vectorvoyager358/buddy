@@ -5,65 +5,59 @@ import Combine
 final class BuddyViewModel: ObservableObject {
     @Published private(set) var state: BuddyState = .idle
 
+    private var returnToIdleTask: Task<Void, Never>?
+
     func showReminder(_ reminder: Reminder) {
+        cancelReturnToIdle()
         state = .reminder(reminder)
     }
 
     func completeReminder() {
-        state = .happy(
-            message: "Nice work! Keep taking care of yourself 🎉"
+        showTemporaryMessage(
+            "Nice work! Keep taking care of yourself 🎉",
+            duration: 3
         )
-
-        returnToIdle(after: 3)
     }
 
-    func snoozeReminder(
-        _ reminder: Reminder,
-        for seconds: TimeInterval
-    ) {
-        state = .happy(
-            message: "No problem. I'll remind you again soon!"
+    func showSnoozeConfirmation() {
+        showTemporaryMessage(
+            "No problem. I'll remind you again soon!",
+            duration: 2
         )
-
-        returnToIdle(after: 2)
-
-        Task {
-            try? await Task.sleep(
-                for: .seconds(seconds)
-            )
-
-            guard !Task.isCancelled else {
-                return
-            }
-
-            showReminder(reminder)
-
-            NotificationManager.shared.sendReminder(
-                reminder,
-                after: 1
-            )
-        }
     }
 
     func skipReminder() {
-        state = .happy(
-            message: "Okay, we'll skip this one."
+        showTemporaryMessage(
+            "Okay, we'll skip this one.",
+            duration: 2
         )
-
-        returnToIdle(after: 2)
     }
 
-    private func returnToIdle(after seconds: TimeInterval) {
-        Task {
+    private func showTemporaryMessage(
+        _ message: String,
+        duration: TimeInterval
+    ) {
+        cancelReturnToIdle()
+
+        state = .happy(
+            message: message
+        )
+
+        returnToIdleTask = Task { [weak self] in
             try? await Task.sleep(
-                for: .seconds(seconds)
+                for: .seconds(duration)
             )
 
             guard !Task.isCancelled else {
                 return
             }
 
-            state = .idle
+            self?.state = .idle
         }
+    }
+
+    private func cancelReturnToIdle() {
+        returnToIdleTask?.cancel()
+        returnToIdleTask = nil
     }
 }

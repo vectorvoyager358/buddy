@@ -2,7 +2,8 @@ import SwiftUI
 
 struct BuddyView: View {
     @ObservedObject var viewModel: BuddyViewModel
-
+    let reminderManager: ReminderManager
+    
     @State private var isHovering = false
 
     var body: some View {
@@ -79,7 +80,7 @@ struct BuddyView: View {
                 .buttonStyle(.borderedProminent)
 
                 Button("Snooze") {
-                    viewModel.snoozeReminder(
+                    reminderManager.snooze(
                         reminder,
                         for: 10
                     )
@@ -202,9 +203,14 @@ struct BuddyView: View {
 }
 
 #Preview {
+    let viewModel = BuddyViewModel()
+
     BuddyView(
-        viewModel: BuddyViewModel()
+        viewModel: viewModel,
+        reminderManager: ReminderManager(
+            buddyViewModel: viewModel
+        )
     )
-    .frame(width: 260, height: 280)
+    .frame(width: 280, height: 300)
     .background(.gray.opacity(0.3))
 }
