@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		C1618141301DACB400889015 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = C1618140301DACAB00889015 /* README.md */; };
+		C1618143301DACC800889015 /* ROADMAP.md in Resources */ = {isa = PBXBuildFile; fileRef = C1618142301DACBC00889015 /* ROADMAP.md */; };
+		C1618150301DAF3D00889015 /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = C161814F301DAF3600889015 /* .gitignore */; };
 		C1869D08301C558B006F21AD /* BuddyAnimation.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1869D07301C5586006F21AD /* BuddyAnimation.swift */; };
 		C1869D0A301C55E2006F21AD /* AnimationEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1869D09301C55DE006F21AD /* AnimationEngine.swift */; };
 		C1A55694301C2A120046A637 /* BuddyApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A55693301C2A120046A637 /* BuddyApp.swift */; };
@@ -39,6 +42,9 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		C1618140301DACAB00889015 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		C1618142301DACBC00889015 /* ROADMAP.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ROADMAP.md; sourceTree = "<group>"; };
+		C161814F301DAF3600889015 /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
 		C1869D07301C5586006F21AD /* BuddyAnimation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuddyAnimation.swift; sourceTree = "<group>"; };
 		C1869D09301C55DE006F21AD /* AnimationEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimationEngine.swift; sourceTree = "<group>"; };
 		C1A55690301C2A120046A637 /* Buddy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Buddy.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -57,6 +63,11 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		C1618144301DACD600889015 /* docs */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = docs;
+			sourceTree = "<group>";
+		};
 		C1A55692301C2A120046A637 /* Buddy */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = Buddy;
@@ -102,6 +113,10 @@
 		C1A55687301C2A120046A637 = {
 			isa = PBXGroup;
 			children = (
+				C161814F301DAF3600889015 /* .gitignore */,
+				C1618144301DACD600889015 /* docs */,
+				C1618142301DACBC00889015 /* ROADMAP.md */,
+				C1618140301DACAB00889015 /* README.md */,
 				C1A556D9301C399D0046A637 /* Assets.xcassets */,
 				C1A556D8301C39880046A637 /* Resources */,
 				C1A556D7301C39810046A637 /* Windows */,
@@ -234,6 +249,7 @@
 				C1A5569F301C2A140046A637 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
+				C1618144301DACD600889015 /* docs */,
 				C1A556A0301C2A140046A637 /* BuddyTests */,
 			);
 			name = BuddyTests;
@@ -322,6 +338,9 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C1618150301DAF3D00889015 /* .gitignore in Resources */,
+				C1618141301DACB400889015 /* README.md in Resources */,
+				C1618143301DACC800889015 /* ROADMAP.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
