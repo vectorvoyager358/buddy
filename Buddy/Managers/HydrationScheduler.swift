@@ -4,18 +4,19 @@ import Foundation
 final class HydrationScheduler {
     private let storage: WellnessSettingsStorage
     private let reminderManager: ReminderManager
-    private let calendar: Calendar
+    private let scheduleCalculator: ReminderScheduleCalculator
 
     private var scheduledReminderID: UUID?
 
     init(
         storage: WellnessSettingsStorage,
         reminderManager: ReminderManager,
-        calendar: Calendar = .current
+        scheduleCalculator: ReminderScheduleCalculator =
+            ReminderScheduleCalculator()
     ) {
         self.storage = storage
         self.reminderManager = reminderManager
-        self.calendar = calendar
+        self.scheduleCalculator = scheduleCalculator
     }
 
     // MARK: - Lifecycle
@@ -63,7 +64,7 @@ final class HydrationScheduler {
         cancelCurrentReminder()
     }
 
-    // MARK: - Reminder actions
+    // MARK: - User actions
 
     func hydrationCompleted() {
         var settings = storage.load()
@@ -119,10 +120,20 @@ final class HydrationScheduler {
         } else {
             let now = Date()
 
-            guard let nextDate = nextReminderDate(
-                after: now,
-                settings: hydration
-            ) else {
+            guard let nextDate =
+                scheduleCalculator.nextIntervalReminderDate(
+                    after: now,
+                    intervalMinutes: hydration.intervalMinutes,
+                    lastHandled:
+                        hydration.lastHandled
+                        ?? hydration.lastCompleted,
+                    weekdays: hydration.weekdays,
+                    startHour: hydration.startHour,
+                    startMinute: hydration.startMinute,
+                    endHour: hydration.endHour,
+                    endMinute: hydration.endMinute
+                )
+            else {
                 BuddyLogger.error(
                     "Unable to calculate the next hydration reminder.",
                     category: .scheduler
@@ -221,120 +232,5 @@ final class HydrationScheduler {
                 category: .storage
             )
         }
-    }
-
-    // MARK: - Production scheduling calculation
-
-    private func nextReminderDate(
-        after now: Date,
-        settings: HydrationSettings
-    ) -> Date? {
-        let interval = TimeInterval(
-            settings.intervalMinutes * 60
-        )
-
-        let referenceDate =
-            settings.lastHandled
-            ?? settings.lastCompleted
-
-        let candidate: Date
-
-        if let referenceDate {
-            candidate = max(
-                referenceDate.addingTimeInterval(interval),
-                now
-            )
-        } else {
-            candidate = now.addingTimeInterval(interval)
-        }
-
-        BuddyLogger.debug(
-            "Calculated hydration candidate date: \(candidate).",
-            category: .scheduler
-        )
-
-        return nextAllowedDate(
-            from: candidate,
-            settings: settings
-        )
-    }
-
-    private func nextAllowedDate(
-        from candidate: Date,
-        settings: HydrationSettings
-    ) -> Date? {
-        var searchDate = candidate
-
-        for _ in 0..<14 {
-            guard
-                let dayStart = calendar.date(
-                    bySettingHour: settings.startHour,
-                    minute: settings.startMinute,
-                    second: 0,
-                    of: searchDate
-                ),
-                let dayEnd = calendar.date(
-                    bySettingHour: settings.endHour,
-                    minute: settings.endMinute,
-                    second: 0,
-                    of: searchDate
-                )
-            else {
-                BuddyLogger.error(
-                    "Unable to calculate active hydration hours.",
-                    category: .scheduler
-                )
-
-                return nil
-            }
-
-            let weekdayNumber = calendar.component(
-                .weekday,
-                from: searchDate
-            )
-
-            guard let weekday = Weekday(
-                rawValue: weekdayNumber
-            ) else {
-                BuddyLogger.error(
-                    "Unable to convert calendar weekday value.",
-                    category: .scheduler
-                )
-
-                return nil
-            }
-
-            if settings.weekdays.contains(weekday) {
-                if searchDate < dayStart {
-                    return dayStart
-                }
-
-                if searchDate <= dayEnd {
-                    return searchDate
-                }
-            }
-
-            guard let nextDay = calendar.date(
-                byAdding: .day,
-                value: 1,
-                to: dayStart
-            ) else {
-                BuddyLogger.error(
-                    "Unable to calculate the next active day.",
-                    category: .scheduler
-                )
-
-                return nil
-            }
-
-            searchDate = nextDay
-        }
-
-        BuddyLogger.warning(
-            "No valid hydration reminder date was found within 14 days.",
-            category: .scheduler
-        )
-
-        return nil
     }
 }
