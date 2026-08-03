@@ -36,6 +36,7 @@
 		C1EEC2E3302116B000417AB5 /* SchedulerConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1EEC2E2302116AE00417AB5 /* SchedulerConfiguration.swift */; };
 		C1EEC2E5302116D600417AB5 /* AppNotifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1EEC2E4302116D500417AB5 /* AppNotifications.swift */; };
 		C1EEC2E73021170600417AB5 /* HydrationScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1EEC2E63021170500417AB5 /* HydrationScheduler.swift */; };
+		C1EEC2FF30212AB300417AB5 /* BuddyLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1EEC2FE30212AB100417AB5 /* BuddyLogger.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -88,6 +89,7 @@
 		C1EEC2E2302116AE00417AB5 /* SchedulerConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchedulerConfiguration.swift; sourceTree = "<group>"; };
 		C1EEC2E4302116D500417AB5 /* AppNotifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppNotifications.swift; sourceTree = "<group>"; };
 		C1EEC2E63021170500417AB5 /* HydrationScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HydrationScheduler.swift; sourceTree = "<group>"; };
+		C1EEC2FE30212AB100417AB5 /* BuddyLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuddyLogger.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -199,6 +201,7 @@
 		C1A556D4301C395E0046A637 /* Managers */ = {
 			isa = PBXGroup;
 			children = (
+				C1EEC2FE30212AB100417AB5 /* BuddyLogger.swift */,
 				C1EEC2E63021170500417AB5 /* HydrationScheduler.swift */,
 				C1869D09301C55DE006F21AD /* AnimationEngine.swift */,
 				C1A556CF301C34830046A637 /* ReminderManager.swift */,
@@ -410,6 +413,7 @@
 			files = (
 				C1869D08301C558B006F21AD /* BuddyAnimation.swift in Sources */,
 				C1A556C5301C2EF00046A637 /* NotificationManager.swift in Sources */,
+				C1EEC2FF30212AB300417AB5 /* BuddyLogger.swift in Sources */,
 				C1869D0A301C55E2006F21AD /* AnimationEngine.swift in Sources */,
 				C1EEC2DF30210CB700417AB5 /* WeekdaySelector.swift in Sources */,
 				C1EEC2E73021170600417AB5 /* HydrationScheduler.swift in Sources */,
