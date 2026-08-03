@@ -1,13 +1,21 @@
-# Xcode user settings
-*.xcuserstate
-xcuserdata/
-*.xcuserdatad
-
 # macOS
 .DS_Store
 
+# Xcode user data
+xcuserdata/
+*.xcuserstate
+*.xcuserdatad
+
+# Xcode build products
+DerivedData/
+build/
+
 # Swift Package Manager
 .build/
+Package.resolved
 
-# Xcode Derived Data
-DerivedData/
+# Archives
+*.xcarchive
+
+# Debug symbols
+*.dSYM
