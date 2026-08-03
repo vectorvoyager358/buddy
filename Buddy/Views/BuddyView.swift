@@ -11,7 +11,6 @@ struct BuddyView: View {
     var body: some View {
         VStack(spacing: 10) {
             messageBubble
-
             buddyCharacter
         }
         .frame(
@@ -52,10 +51,8 @@ struct BuddyView: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
             .background(
-                RoundedRectangle(
-                    cornerRadius: 14
-                )
-                .fill(.regularMaterial)
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(.regularMaterial)
             )
             .transition(
                 .move(edge: .bottom)
@@ -93,7 +90,7 @@ struct BuddyView: View {
 
             HStack(spacing: 8) {
                 Button("Done") {
-                    viewModel.completeReminder()
+                    reminderManager.complete(reminder)
                 }
                 .buttonStyle(.borderedProminent)
 
@@ -106,7 +103,7 @@ struct BuddyView: View {
                 .buttonStyle(.bordered)
 
                 Button("Skip") {
-                    viewModel.skipReminder()
+                    reminderManager.skip(reminder)
                 }
                 .buttonStyle(.borderless)
             }
@@ -114,15 +111,13 @@ struct BuddyView: View {
         .padding(12)
         .frame(width: 250)
         .background(
-            RoundedRectangle(
-                cornerRadius: 16
-            )
-            .fill(.regularMaterial)
-            .shadow(
-                color: .black.opacity(0.15),
-                radius: 8,
-                y: 4
-            )
+            RoundedRectangle(cornerRadius: 16)
+                .fill(.regularMaterial)
+                .shadow(
+                    color: .black.opacity(0.15),
+                    radius: 8,
+                    y: 4
+                )
         )
         .transition(
             .move(edge: .bottom)
@@ -145,10 +140,8 @@ struct BuddyView: View {
             .padding(.vertical, 10)
             .frame(maxWidth: 240)
             .background(
-                RoundedRectangle(
-                    cornerRadius: 16
-                )
-                .fill(.regularMaterial)
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(.regularMaterial)
             )
             .transition(
                 .scale
