@@ -5,22 +5,39 @@ final class ReminderManager {
     private let notificationManager: NotificationManager
     private let buddyViewModel: BuddyViewModel
 
-    private var scheduledTasks: [UUID: Task<Void, Never>] = [:]
+    private var scheduledTasks: [
+        UUID: Task<Void, Never>
+    ] = [:]
+
     var onReminderTriggered: (() -> Void)?
+    var onReminderCompleted: ((Reminder) -> Void)?
+    var onReminderSnoozed: ((Reminder) -> Void)?
+    var onReminderSkipped: ((Reminder) -> Void)?
 
     init(
-        notificationManager: NotificationManager = .shared,
+        notificationManager: NotificationManager,
         buddyViewModel: BuddyViewModel
     ) {
         self.notificationManager = notificationManager
         self.buddyViewModel = buddyViewModel
     }
 
+    convenience init(
+        buddyViewModel: BuddyViewModel
+    ) {
+        self.init(
+            notificationManager: .shared,
+            buddyViewModel: buddyViewModel
+        )
+    }
+
     func schedule(
         _ reminder: Reminder,
         after seconds: TimeInterval
     ) {
-        cancel(reminderID: reminder.id)
+        cancel(
+            reminderID: reminder.id
+        )
 
         notificationManager.sendReminder(
             reminder,
@@ -40,12 +57,19 @@ final class ReminderManager {
                 return
             }
 
-            self.buddyViewModel.showReminder(reminder)
             self.onReminderTriggered?()
+            self.buddyViewModel.showReminder(reminder)
             self.scheduledTasks[reminder.id] = nil
         }
 
         scheduledTasks[reminder.id] = task
+    }
+
+    func complete(
+        _ reminder: Reminder
+    ) {
+        buddyViewModel.completeReminder()
+        onReminderCompleted?(reminder)
     }
 
     func snooze(
@@ -53,6 +77,7 @@ final class ReminderManager {
         for seconds: TimeInterval
     ) {
         buddyViewModel.showSnoozeConfirmation()
+        onReminderSnoozed?(reminder)
 
         schedule(
             reminder,
@@ -60,7 +85,16 @@ final class ReminderManager {
         )
     }
 
-    func cancel(reminderID: UUID) {
+    func skip(
+        _ reminder: Reminder
+    ) {
+        buddyViewModel.skipReminder()
+        onReminderSkipped?(reminder)
+    }
+
+    func cancel(
+        reminderID: UUID
+    ) {
         scheduledTasks[reminderID]?.cancel()
         scheduledTasks[reminderID] = nil
 

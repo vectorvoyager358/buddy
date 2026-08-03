@@ -3,33 +3,125 @@ import SwiftUI
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
+
+    // MARK: - Window
+
     private var buddyPanel: BuddyPanel?
-    private var statusItem: NSStatusItem?
+
+    // MARK: - Dependencies
 
     private let animationEngine = AnimationEngine()
+    private let settingsStorage = WellnessSettingsStorage()
 
     private lazy var buddyViewModel = BuddyViewModel(
         animationEngine: animationEngine
     )
 
     private var reminderManager: ReminderManager!
+    private var hydrationScheduler: HydrationScheduler!
+
+    // MARK: - Application lifecycle
 
     func applicationDidFinishLaunching(
         _ notification: Notification
     ) {
+        createDependencies()
+        connectCallbacks()
+        createBuddyPanel()
+
+        NotificationManager.shared.requestPermission()
+
+        observeSettingsChanges()
+        hydrationScheduler.start()
+    }
+
+    func applicationWillTerminate(
+        _ notification: Notification
+    ) {
+        hydrationScheduler.stop()
+
+        NotificationCenter.default.removeObserver(
+            self,
+            name: .wellnessSettingsDidChange,
+            object: nil
+        )
+    }
+
+    // MARK: - Dependency setup
+
+    private func createDependencies() {
         reminderManager = ReminderManager(
             buddyViewModel: buddyViewModel
         )
 
-        reminderManager.onReminderTriggered = { [weak self] in
+        hydrationScheduler = HydrationScheduler(
+            storage: settingsStorage,
+            reminderManager: reminderManager
+        )
+    }
+
+    private func connectCallbacks() {
+        reminderManager.onReminderTriggered = {
+            [weak self] in
+
             self?.buddyPanel?.orderFrontRegardless()
         }
 
-        createBuddyPanel()
-        createMenuBarItem()
+        reminderManager.onReminderCompleted = {
+            [weak self] reminder in
 
-        NotificationManager.shared.requestPermission()
+            guard reminder.type == .water else {
+                return
+            }
+
+            self?.hydrationScheduler
+                .hydrationCompleted()
+        }
+
+        reminderManager.onReminderSnoozed = {
+            [weak self] reminder in
+
+            guard reminder.type == .water else {
+                return
+            }
+
+            self?.hydrationScheduler
+                .hydrationSnoozed()
+        }
+
+        reminderManager.onReminderSkipped = {
+            [weak self] reminder in
+
+            guard reminder.type == .water else {
+                return
+            }
+
+            self?.hydrationScheduler
+                .hydrationSkipped()
+        }
     }
+
+    // MARK: - Settings changes
+
+    private func observeSettingsChanges() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(
+                wellnessSettingsDidChange(_:)
+            ),
+            name: .wellnessSettingsDidChange,
+            object: nil
+        )
+    }
+
+    @objc
+    private func wellnessSettingsDidChange(
+        _ notification: Notification
+    ) {
+        hydrationScheduler.reload()
+    }
+
+    // MARK: - Floating panel
 
     private func createBuddyPanel() {
         let panel = BuddyPanel(
@@ -55,95 +147,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         buddyPanel = panel
     }
 
-    private func createMenuBarItem() {
-        let item = NSStatusBar.system.statusItem(
-            withLength: NSStatusItem.variableLength
-        )
+    // MARK: - Menu-bar actions
 
-        if let button = item.button {
-            button.image = NSImage(
-                systemSymbolName: "pawprint.fill",
-                accessibilityDescription: "Buddy"
-            )
-        }
-
-        let menu = NSMenu()
-
-        let reminderItem = NSMenuItem(
-            title: "Test Reminder (10 sec)",
-            action: #selector(testReminder),
-            keyEquivalent: ""
-        )
-
-        reminderItem.target = self
-        menu.addItem(reminderItem)
-
-        menu.addItem(.separator())
-
-        let showItem = NSMenuItem(
-            title: "Show Buddy",
-            action: #selector(showBuddy),
-            keyEquivalent: ""
-        )
-
-        showItem.target = self
-        menu.addItem(showItem)
-
-        let hideItem = NSMenuItem(
-            title: "Hide Buddy",
-            action: #selector(hideBuddy),
-            keyEquivalent: ""
-        )
-
-        hideItem.target = self
-        menu.addItem(hideItem)
-
-        menu.addItem(.separator())
-
-        let quitItem = NSMenuItem(
-            title: "Quit Buddy",
-            action: #selector(quitBuddy),
-            keyEquivalent: "q"
-        )
-
-        quitItem.target = self
-        menu.addItem(quitItem)
-
-        item.menu = menu
-        statusItem = item
-    }
-
-    @objc
-    private func testReminder() {
-        let reminder = Reminder(
-            title: "Drink Water",
-            message: """
-            You've been coding for a while. \
-            Let's grab some water!
-            """,
-            type: .water
-        )
-
-        reminderManager.schedule(
-            reminder,
-            after: 10
-        )
-
+    func showBuddy() {
         buddyPanel?.orderFrontRegardless()
     }
 
-    @objc
-    private func showBuddy() {
-        buddyPanel?.orderFrontRegardless()
-    }
-
-    @objc
-    private func hideBuddy() {
+    func hideBuddy() {
         buddyPanel?.orderOut(nil)
     }
 
-    @objc
-    private func quitBuddy() {
+    func quitBuddy() {
         NSApplication.shared.terminate(nil)
     }
 }
