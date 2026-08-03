@@ -3,12 +3,7 @@ import SwiftUI
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
-
-    // MARK: - Window
-
     private var buddyPanel: BuddyPanel?
-
-    // MARK: - Dependencies
 
     private let animationEngine = AnimationEngine()
     private let settingsStorage = WellnessSettingsStorage()
@@ -20,11 +15,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var reminderManager: ReminderManager!
     private var hydrationScheduler: HydrationScheduler!
 
-    // MARK: - Application lifecycle
-
     func applicationDidFinishLaunching(
         _ notification: Notification
     ) {
+        BuddyLogger.info(
+            "Buddy is starting.",
+            category: .app
+        )
+
         createDependencies()
         connectCallbacks()
         createBuddyPanel()
@@ -33,11 +31,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         observeSettingsChanges()
         hydrationScheduler.start()
+
+        BuddyLogger.info(
+            "Buddy started successfully.",
+            category: .app
+        )
     }
 
     func applicationWillTerminate(
         _ notification: Notification
     ) {
+        BuddyLogger.info(
+            "Buddy is terminating.",
+            category: .app
+        )
+
         hydrationScheduler.stop()
 
         NotificationCenter.default.removeObserver(
@@ -47,9 +55,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
     }
 
-    // MARK: - Dependency setup
-
     private func createDependencies() {
+        BuddyLogger.debug(
+            "Creating Buddy dependencies.",
+            category: .app
+        )
+
         reminderManager = ReminderManager(
             buddyViewModel: buddyViewModel
         )
@@ -63,6 +74,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func connectCallbacks() {
         reminderManager.onReminderTriggered = {
             [weak self] in
+
+            BuddyLogger.debug(
+                "Showing Buddy because a reminder triggered.",
+                category: .reminders
+            )
 
             self?.buddyPanel?.orderFrontRegardless()
         }
@@ -101,8 +117,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    // MARK: - Settings changes
-
     private func observeSettingsChanges() {
         NotificationCenter.default.addObserver(
             self,
@@ -112,16 +126,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             name: .wellnessSettingsDidChange,
             object: nil
         )
+
+        BuddyLogger.debug(
+            "Started observing wellness settings changes.",
+            category: .settings
+        )
     }
 
     @objc
     private func wellnessSettingsDidChange(
         _ notification: Notification
     ) {
+        BuddyLogger.info(
+            "Wellness settings changed. Reloading scheduler.",
+            category: .settings
+        )
+
         hydrationScheduler.reload()
     }
-
-    // MARK: - Floating panel
 
     private func createBuddyPanel() {
         let panel = BuddyPanel(
@@ -145,19 +167,37 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panel.orderFrontRegardless()
 
         buddyPanel = panel
-    }
 
-    // MARK: - Menu-bar actions
+        BuddyLogger.info(
+            "Buddy floating panel was created.",
+            category: .app
+        )
+    }
 
     func showBuddy() {
         buddyPanel?.orderFrontRegardless()
+
+        BuddyLogger.debug(
+            "Buddy was shown.",
+            category: .app
+        )
     }
 
     func hideBuddy() {
         buddyPanel?.orderOut(nil)
+
+        BuddyLogger.debug(
+            "Buddy was hidden.",
+            category: .app
+        )
     }
 
     func quitBuddy() {
+        BuddyLogger.info(
+            "Quit Buddy was selected.",
+            category: .app
+        )
+
         NSApplication.shared.terminate(nil)
     }
 }

@@ -25,6 +25,11 @@ final class WellnessSettingsStorage {
         guard fileManager.fileExists(
             atPath: fileURL.path
         ) else {
+            BuddyLogger.info(
+                "No saved wellness settings were found. Using defaults.",
+                category: .storage
+            )
+
             return .default
         }
 
@@ -33,13 +38,22 @@ final class WellnessSettingsStorage {
                 contentsOf: fileURL
             )
 
-            return try decoder.decode(
+            let settings = try decoder.decode(
                 WellnessSettings.self,
                 from: data
             )
+
+            BuddyLogger.info(
+                "Wellness settings loaded successfully.",
+                category: .storage
+            )
+
+            return settings
         } catch {
-            print(
-                "Unable to load wellness settings: \(error.localizedDescription)"
+            BuddyLogger.error(
+                "Unable to load wellness settings: "
+                + error.localizedDescription,
+                category: .storage
             )
 
             return .default
@@ -49,7 +63,8 @@ final class WellnessSettingsStorage {
     func save(
         _ settings: WellnessSettings
     ) throws {
-        let directoryURL = applicationSupportDirectoryURL()
+        let directoryURL =
+            applicationSupportDirectoryURL()
 
         try fileManager.createDirectory(
             at: directoryURL,
@@ -64,6 +79,11 @@ final class WellnessSettingsStorage {
             to: settingsFileURL(),
             options: .atomic
         )
+
+        BuddyLogger.info(
+            "Wellness settings saved successfully.",
+            category: .storage
+        )
     }
 
     func reset() throws {
@@ -72,11 +92,21 @@ final class WellnessSettingsStorage {
         guard fileManager.fileExists(
             atPath: fileURL.path
         ) else {
+            BuddyLogger.info(
+                "No wellness settings file existed to reset.",
+                category: .storage
+            )
+
             return
         }
 
         try fileManager.removeItem(
             at: fileURL
+        )
+
+        BuddyLogger.notice(
+            "Wellness settings were reset.",
+            category: .storage
         )
     }
 
