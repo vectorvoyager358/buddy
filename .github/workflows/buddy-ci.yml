@@ -1,0 +1,44 @@
+name: Buddy CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: buddy-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Build and Test Buddy
+    runs-on: macos-15
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Display Xcode version
+        run: xcodebuild -version
+
+      - name: Display available schemes
+        run: |
+          xcodebuild \
+            -list \
+            -project Buddy/Buddy.xcodeproj
+
+      - name: Build and run unit tests
+        run: |
+          set -o pipefail
+
+          xcodebuild \
+            -project Buddy/Buddy.xcodeproj \
+            -scheme Buddy \
+            -configuration Debug \
+            -destination "platform=macOS" \
+            -derivedDataPath "$RUNNER_TEMP/BuddyDerivedData" \
+            CODE_SIGNING_ALLOWED=NO \
+            -only-testing:BuddyTests \
+            test
