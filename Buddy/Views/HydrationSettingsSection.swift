@@ -4,7 +4,10 @@ struct HydrationSettingsSection: View {
     @Binding var hydration: HydrationSettings
 
     var body: some View {
-        Section {
+        VStack(
+            alignment: .leading,
+            spacing: 16
+        ) {
             Toggle(
                 "Enable water reminders",
                 isOn: $hydration.isEnabled
@@ -12,38 +15,46 @@ struct HydrationSettingsSection: View {
             .toggleStyle(.switch)
 
             Group {
+                Divider()
+
                 intervalRow
+
+                Divider()
 
                 WorkingHoursSection(
                     hydration: $hydration
                 )
 
+                Divider()
+
                 WeekdaySelector(
-                    selectedWeekdays: $hydration.weekdays
+                    selectedWeekdays:
+                        $hydration.weekdays
                 )
             }
             .disabled(!hydration.isEnabled)
-            .opacity(hydration.isEnabled ? 1 : 0.55)
-        } header: {
-            Label(
-                "Hydration",
-                systemImage: "drop.fill"
+            .opacity(
+                hydration.isEnabled
+                    ? 1
+                    : 0.45
             )
-            .font(.headline)
-        } footer: {
-            Text(scheduleSummary)
-                .foregroundStyle(.secondary)
         }
     }
-    
+
     private var intervalRow: some View {
         HStack {
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(
+                alignment: .leading,
+                spacing: 3
+            ) {
                 Text("Reminder interval")
 
-                Text("How often Buddy should remind you.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                Text(
+                    "How often Buddy should "
+                    + "suggest a water break."
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
             }
 
             Spacer()
@@ -57,31 +68,11 @@ struct HydrationSettingsSection: View {
                     "\(hydration.intervalMinutes) minutes"
                 )
                 .monospacedDigit()
-                .frame(minWidth: 90, alignment: .trailing)
+                .frame(
+                    minWidth: 95,
+                    alignment: .trailing
+                )
             }
         }
     }
-
-    private var scheduleSummary: String {
-        let days = Weekday.allCases
-            .filter {
-                hydration.weekdays.contains($0)
-            }
-            .map(\.shortName)
-            .joined(separator: ", ")
-
-        return """
-        Buddy will remind you every \
-        \(hydration.intervalMinutes) minutes on \
-        \(days.isEmpty ? "no selected days" : days).
-        """
-    }
-}
-
-#Preview {
-    HydrationSettingsSection(
-        hydration: .constant(.default)
-    )
-    .padding()
-    .frame(width: 520)
 }

@@ -14,6 +14,9 @@ final class ReminderManager {
     var onReminderSnoozed: ((Reminder) -> Void)?
     var onReminderSkipped: ((Reminder) -> Void)?
 
+    /// Called whenever Done, Snooze, or Skip is selected.
+    var onReminderResolved: (() -> Void)?
+
     init(
         notificationManager: NotificationManager,
         buddyViewModel: BuddyViewModel
@@ -91,6 +94,7 @@ final class ReminderManager {
 
         buddyViewModel.completeReminder()
         onReminderCompleted?(reminder)
+        onReminderResolved?()
     }
 
     func snooze(
@@ -110,6 +114,8 @@ final class ReminderManager {
             reminder,
             after: seconds
         )
+
+        onReminderResolved?()
     }
 
     func skip(
@@ -122,6 +128,7 @@ final class ReminderManager {
 
         buddyViewModel.skipReminder()
         onReminderSkipped?(reminder)
+        onReminderResolved?()
     }
 
     func cancel(

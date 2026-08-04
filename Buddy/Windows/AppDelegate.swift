@@ -2,18 +2,30 @@ import AppKit
 import SwiftUI
 
 @MainActor
-final class AppDelegate: NSObject, NSApplicationDelegate {
+final class AppDelegate:
+    NSObject,
+    NSApplicationDelegate {
     private var buddyPanel: BuddyPanel?
 
-    private let animationEngine = AnimationEngine()
-    private let settingsStorage = WellnessSettingsStorage()
+    private let animationEngine =
+        AnimationEngine()
 
-    private lazy var buddyViewModel = BuddyViewModel(
-        animationEngine: animationEngine
-    )
+    private let settingsStorage =
+        WellnessSettingsStorage()
 
-    private var reminderManager: ReminderManager!
-    private var hydrationScheduler: HydrationScheduler!
+    private let developerSettingsStore =
+        DeveloperSettingsStore()
+
+    private lazy var buddyViewModel =
+        BuddyViewModel(
+            animationEngine: animationEngine
+        )
+
+    private var reminderManager:
+        ReminderManager!
+
+    private var hydrationScheduler:
+        HydrationScheduler!
 
     func applicationDidFinishLaunching(
         _ notification: Notification
@@ -27,7 +39,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         connectCallbacks()
         createBuddyPanel()
 
-        NotificationManager.shared.requestPermission()
+        NotificationManager.shared
+            .requestPermission()
 
         observeSettingsChanges()
         hydrationScheduler.start()
@@ -41,80 +54,89 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillTerminate(
         _ notification: Notification
     ) {
-        BuddyLogger.info(
-            "Buddy is terminating.",
-            category: .app
-        )
-
         hydrationScheduler.stop()
 
-        NotificationCenter.default.removeObserver(
-            self,
-            name: .wellnessSettingsDidChange,
-            object: nil
-        )
+        NotificationCenter.default
+            .removeObserver(
+                self,
+                name:
+                    .wellnessSettingsDidChange,
+                object: nil
+            )
     }
 
     private func createDependencies() {
-        BuddyLogger.debug(
-            "Creating Buddy dependencies.",
-            category: .app
-        )
+        reminderManager =
+            ReminderManager(
+                buddyViewModel:
+                    buddyViewModel
+            )
 
-        reminderManager = ReminderManager(
-            buddyViewModel: buddyViewModel
-        )
-
-        hydrationScheduler = HydrationScheduler(
-            storage: settingsStorage,
-            reminderManager: reminderManager
-        )
+        hydrationScheduler =
+            HydrationScheduler(
+                storage:
+                    settingsStorage,
+                developerSettingsStore:
+                    developerSettingsStore,
+                reminderManager:
+                    reminderManager
+            )
     }
 
     private func connectCallbacks() {
-        reminderManager.onReminderTriggered = {
-            [weak self] in
+        reminderManager
+            .onReminderTriggered = {
+                [weak self] in
 
-            BuddyLogger.debug(
-                "Showing Buddy because a reminder triggered.",
-                category: .reminders
-            )
-
-            self?.buddyPanel?.orderFrontRegardless()
-        }
-
-        reminderManager.onReminderCompleted = {
-            [weak self] reminder in
-
-            guard reminder.type == .water else {
-                return
+                self?.buddyPanel?
+                    .orderFrontRegardless()
             }
 
-            self?.hydrationScheduler
-                .hydrationCompleted()
-        }
+        reminderManager
+            .onReminderResolved = {
+                [weak self] in
 
-        reminderManager.onReminderSnoozed = {
-            [weak self] reminder in
-
-            guard reminder.type == .water else {
-                return
+                self?.hideBuddyAfterAction()
             }
 
-            self?.hydrationScheduler
-                .hydrationSnoozed()
-        }
+        reminderManager
+            .onReminderCompleted = {
+                [weak self] reminder in
 
-        reminderManager.onReminderSkipped = {
-            [weak self] reminder in
+                guard reminder.type == .water
+                else {
+                    return
+                }
 
-            guard reminder.type == .water else {
-                return
+                self?.hydrationScheduler
+                    .hydrationCompleted()
             }
 
-            self?.hydrationScheduler
-                .hydrationSkipped()
-        }
+        reminderManager
+            .onReminderSnoozed = {
+                [weak self] reminder in
+
+                guard reminder.type == .water
+                else {
+                    return
+                }
+
+                self?.hydrationScheduler
+                    .hydrationSnoozed()
+            }
+
+        reminderManager
+            .onReminderSkipped = {
+                [weak self] reminder in
+
+                guard reminder.type == .water
+                else {
+                    return
+                }
+
+                self?.hydrationScheduler
+                    .hydrationSkipped()
+            }
     }
 
     private func observeSettingsChanges() {
@@ -126,22 +148,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             name: .wellnessSettingsDidChange,
             object: nil
         )
-
-        BuddyLogger.debug(
-            "Started observing wellness settings changes.",
-            category: .settings
-        )
     }
 
     @objc
     private func wellnessSettingsDidChange(
         _ notification: Notification
     ) {
-        BuddyLogger.info(
-            "Wellness settings changed. Reloading scheduler.",
-            category: .settings
-        )
-
         hydrationScheduler.reload()
     }
 
@@ -150,16 +162,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             contentRect: NSRect(
                 x: 100,
                 y: 100,
-                width: 280,
-                height: 300
+                width: 340,
+                height: 390
             )
         )
 
         panel.contentView = NSHostingView(
             rootView: BuddyView(
                 viewModel: buddyViewModel,
-                animationEngine: animationEngine,
-                reminderManager: reminderManager
+                animationEngine:
+                    animationEngine,
+                reminderManager:
+                    reminderManager
             )
         )
 
@@ -167,37 +181,43 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panel.orderFrontRegardless()
 
         buddyPanel = panel
+    }
 
-        BuddyLogger.info(
-            "Buddy floating panel was created.",
-            category: .app
-        )
+    private func hideBuddyAfterAction() {
+        guard let buddyPanel else {
+            return
+        }
+
+        NSAnimationContext
+            .runAnimationGroup { context in
+                context.duration = 0.18
+
+                buddyPanel
+                    .animator()
+                    .alphaValue = 0
+            } completionHandler: {
+                [weak self] in
+
+                Task { @MainActor in
+                    self?.buddyPanel?
+                        .orderOut(nil)
+
+                    self?.buddyPanel?
+                        .alphaValue = 1
+                }
+            }
     }
 
     func showBuddy() {
+        buddyPanel?.alphaValue = 1
         buddyPanel?.orderFrontRegardless()
-
-        BuddyLogger.debug(
-            "Buddy was shown.",
-            category: .app
-        )
     }
 
     func hideBuddy() {
         buddyPanel?.orderOut(nil)
-
-        BuddyLogger.debug(
-            "Buddy was hidden.",
-            category: .app
-        )
     }
 
     func quitBuddy() {
-        BuddyLogger.info(
-            "Quit Buddy was selected.",
-            category: .app
-        )
-
         NSApplication.shared.terminate(nil)
     }
 }

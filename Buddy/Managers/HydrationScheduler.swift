@@ -3,23 +3,32 @@ import Foundation
 @MainActor
 final class HydrationScheduler {
     private let storage: WellnessSettingsStorage
+    private let developerSettingsStore:
+        DeveloperSettingsStore
+
     private let reminderManager: ReminderManager
-    private let scheduleCalculator: ReminderScheduleCalculator
+    private let scheduleCalculator:
+        ReminderScheduleCalculator
 
     private var scheduledReminderID: UUID?
 
     init(
         storage: WellnessSettingsStorage,
+        developerSettingsStore:
+            DeveloperSettingsStore,
         reminderManager: ReminderManager,
-        scheduleCalculator: ReminderScheduleCalculator =
-            ReminderScheduleCalculator()
+        scheduleCalculator:
+            ReminderScheduleCalculator =
+                ReminderScheduleCalculator()
     ) {
         self.storage = storage
-        self.reminderManager = reminderManager
-        self.scheduleCalculator = scheduleCalculator
-    }
+        self.developerSettingsStore =
+            developerSettingsStore
 
-    // MARK: - Lifecycle
+        self.reminderManager = reminderManager
+        self.scheduleCalculator =
+            scheduleCalculator
+    }
 
     func start() {
         BuddyLogger.info(
@@ -64,19 +73,12 @@ final class HydrationScheduler {
         cancelCurrentReminder()
     }
 
-    // MARK: - User actions
-
     func hydrationCompleted() {
         var settings = storage.load()
         let now = Date()
 
         settings.hydration.lastCompleted = now
         settings.hydration.lastHandled = now
-
-        BuddyLogger.notice(
-            "Hydration reminder was completed.",
-            category: .reminders
-        )
 
         saveAndReschedule(settings)
     }
@@ -85,11 +87,6 @@ final class HydrationScheduler {
         var settings = storage.load()
 
         settings.hydration.lastHandled = Date()
-
-        BuddyLogger.info(
-            "Hydration reminder was skipped.",
-            category: .reminders
-        )
 
         saveAndReschedule(settings)
     }
@@ -101,41 +98,51 @@ final class HydrationScheduler {
         )
     }
 
-    // MARK: - Scheduling
-
     private func scheduleNextReminder(
         using hydration: HydrationSettings
     ) {
         let delay: TimeInterval
 
-        if SchedulerConfiguration.useFastHydrationTesting {
-            delay =
-                SchedulerConfiguration.hydrationTestInterval
+        if developerSettingsStore
+            .fastTestingEnabled {
+            delay = TimeInterval(
+                developerSettingsStore
+                    .testIntervalSeconds
+            )
 
-            BuddyLogger.debug(
-                "Hydration test reminder scheduled in "
-                + "\(Int(delay)) seconds.",
+            BuddyLogger.notice(
+                "Fast testing enabled. "
+                + "Hydration reminder scheduled "
+                + "in \(Int(delay)) seconds.",
                 category: .scheduler
             )
         } else {
             let now = Date()
 
             guard let nextDate =
-                scheduleCalculator.nextIntervalReminderDate(
-                    after: now,
-                    intervalMinutes: hydration.intervalMinutes,
-                    lastHandled:
-                        hydration.lastHandled
-                        ?? hydration.lastCompleted,
-                    weekdays: hydration.weekdays,
-                    startHour: hydration.startHour,
-                    startMinute: hydration.startMinute,
-                    endHour: hydration.endHour,
-                    endMinute: hydration.endMinute
-                )
+                scheduleCalculator
+                    .nextIntervalReminderDate(
+                        after: now,
+                        intervalMinutes:
+                            hydration.intervalMinutes,
+                        lastHandled:
+                            hydration.lastHandled
+                            ?? hydration.lastCompleted,
+                        weekdays:
+                            hydration.weekdays,
+                        startHour:
+                            hydration.startHour,
+                        startMinute:
+                            hydration.startMinute,
+                        endHour:
+                            hydration.endHour,
+                        endMinute:
+                            hydration.endMinute
+                    )
             else {
                 BuddyLogger.error(
-                    "Unable to calculate the next hydration reminder.",
+                    "Unable to calculate the next "
+                    + "hydration reminder.",
                     category: .scheduler
                 )
 
@@ -148,14 +155,13 @@ final class HydrationScheduler {
             )
 
             BuddyLogger.info(
-                "Next hydration reminder scheduled for \(nextDate).",
+                "Next hydration reminder "
+                + "scheduled for \(nextDate).",
                 category: .scheduler
             )
         }
 
-        scheduleReminder(
-            after: delay
-        )
+        scheduleReminder(after: delay)
     }
 
     private func scheduleReminder(
@@ -172,13 +178,6 @@ final class HydrationScheduler {
 
         scheduledReminderID = reminder.id
 
-        BuddyLogger.info(
-            "Scheduling hydration reminder with ID "
-            + reminder.id.uuidString
-            + " after \(Int(delay)) seconds.",
-            category: .scheduler
-        )
-
         reminderManager.schedule(
             reminder,
             after: delay
@@ -190,20 +189,12 @@ final class HydrationScheduler {
             return
         }
 
-        BuddyLogger.debug(
-            "Cancelling scheduled hydration reminder "
-            + scheduledReminderID.uuidString,
-            category: .scheduler
-        )
-
         reminderManager.cancel(
             reminderID: scheduledReminderID
         )
 
         self.scheduledReminderID = nil
     }
-
-    // MARK: - Persistence
 
     private func saveAndReschedule(
         _ settings: WellnessSettings
@@ -214,11 +205,6 @@ final class HydrationScheduler {
             cancelCurrentReminder()
 
             guard settings.hydration.isEnabled else {
-                BuddyLogger.info(
-                    "Hydration reminders are disabled after saving state.",
-                    category: .scheduler
-                )
-
                 return
             }
 
