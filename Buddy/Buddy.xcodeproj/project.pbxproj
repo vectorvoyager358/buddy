@@ -31,11 +31,11 @@
 		C1EEC2DB30210C5800417AB5 /* HydrationSettingsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1EEC2DA30210C5700417AB5 /* HydrationSettingsSection.swift */; };
 		C1EEC2DD30210C9B00417AB5 /* WorkingHoursSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1EEC2DC30210C9A00417AB5 /* WorkingHoursSection.swift */; };
 		C1EEC2DF30210CB700417AB5 /* WeekdaySelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1EEC2DE30210CB500417AB5 /* WeekdaySelector.swift */; };
-		C1EEC2E3302116B000417AB5 /* SchedulerConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1EEC2E2302116AE00417AB5 /* SchedulerConfiguration.swift */; };
 		C1EEC2E5302116D600417AB5 /* AppNotifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1EEC2E4302116D500417AB5 /* AppNotifications.swift */; };
 		C1EEC2E73021170600417AB5 /* HydrationScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1EEC2E63021170500417AB5 /* HydrationScheduler.swift */; };
 		C1EEC2FF30212AB300417AB5 /* BuddyLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1EEC2FE30212AB100417AB5 /* BuddyLogger.swift */; };
 		C1EEC31730212D0700417AB5 /* ReminderScheduleCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1EEC31630212D0500417AB5 /* ReminderScheduleCalculator.swift */; };
+		C1EEC31D30227B8B00417AB5 /* DeveloperSettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1EEC31C30227B8900417AB5 /* DeveloperSettingsStore.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -85,11 +85,11 @@
 		C1EEC2DA30210C5700417AB5 /* HydrationSettingsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HydrationSettingsSection.swift; sourceTree = "<group>"; };
 		C1EEC2DC30210C9A00417AB5 /* WorkingHoursSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkingHoursSection.swift; sourceTree = "<group>"; };
 		C1EEC2DE30210CB500417AB5 /* WeekdaySelector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeekdaySelector.swift; sourceTree = "<group>"; };
-		C1EEC2E2302116AE00417AB5 /* SchedulerConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchedulerConfiguration.swift; sourceTree = "<group>"; };
 		C1EEC2E4302116D500417AB5 /* AppNotifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppNotifications.swift; sourceTree = "<group>"; };
 		C1EEC2E63021170500417AB5 /* HydrationScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HydrationScheduler.swift; sourceTree = "<group>"; };
 		C1EEC2FE30212AB100417AB5 /* BuddyLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuddyLogger.swift; sourceTree = "<group>"; };
 		C1EEC31630212D0500417AB5 /* ReminderScheduleCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReminderScheduleCalculator.swift; sourceTree = "<group>"; };
+		C1EEC31C30227B8900417AB5 /* DeveloperSettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeveloperSettingsStore.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -198,7 +198,6 @@
 			isa = PBXGroup;
 			children = (
 				C1EEC2E4302116D500417AB5 /* AppNotifications.swift */,
-				C1EEC2E2302116AE00417AB5 /* SchedulerConfiguration.swift */,
 				C1EEC2C730210A3C00417AB5 /* HydrationSettings.swift */,
 				C1EEC2C830210A3C00417AB5 /* ReminderSchedule.swift */,
 				C1EEC2C930210A3C00417AB5 /* Weekday.swift */,
@@ -271,6 +270,7 @@
 		C1EEC2D530210AE600417AB5 /* Storage */ = {
 			isa = PBXGroup;
 			children = (
+				C1EEC31C30227B8900417AB5 /* DeveloperSettingsStore.swift */,
 				C1EEC2D330210AE600417AB5 /* ReminderStorage.swift */,
 				C1EEC2D430210AE600417AB5 /* WellnessSettingsStorage.swift */,
 			);
@@ -425,6 +425,7 @@
 			files = (
 				C1869D08301C558B006F21AD /* BuddyAnimation.swift in Sources */,
 				C1A556C5301C2EF00046A637 /* NotificationManager.swift in Sources */,
+				C1EEC31D30227B8B00417AB5 /* DeveloperSettingsStore.swift in Sources */,
 				C1EEC2FF30212AB300417AB5 /* BuddyLogger.swift in Sources */,
 				C1869D0A301C55E2006F21AD /* AnimationEngine.swift in Sources */,
 				C1EEC31730212D0700417AB5 /* ReminderScheduleCalculator.swift in Sources */,
@@ -435,7 +436,6 @@
 				C1EEC2D730210AE700417AB5 /* WellnessSettingsStorage.swift in Sources */,
 				C1A556C2301C2C1D0046A637 /* SettingsView.swift in Sources */,
 				C1A556CE301C31AF0046A637 /* BuddyViewModel.swift in Sources */,
-				C1EEC2E3302116B000417AB5 /* SchedulerConfiguration.swift in Sources */,
 				C1A556BC301C2B920046A637 /* AppDelegate.swift in Sources */,
 				C1A55696301C2A120046A637 /* BuddyView.swift in Sources */,
 				C1A556C8301C316E0046A637 /* BuddyState.swift in Sources */,

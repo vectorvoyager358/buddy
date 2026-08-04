@@ -5,20 +5,39 @@ import Combine
 final class SettingsViewModel: ObservableObject {
     @Published var settings: WellnessSettings
 
+    @Published var fastTestingEnabled: Bool
+    @Published var testIntervalSeconds: Int
+
     @Published private(set) var statusMessage: String?
     @Published private(set) var hasError = false
 
     private let storage: WellnessSettingsStorage
+    private let developerSettingsStore: DeveloperSettingsStore
+
     private var clearStatusTask: Task<Void, Never>?
 
-    init(storage: WellnessSettingsStorage) {
+    init(
+        storage: WellnessSettingsStorage,
+        developerSettingsStore: DeveloperSettingsStore
+    ) {
         self.storage = storage
+        self.developerSettingsStore =
+            developerSettingsStore
+
         self.settings = storage.load()
+
+        self.fastTestingEnabled =
+            developerSettingsStore.fastTestingEnabled
+
+        self.testIntervalSeconds =
+            developerSettingsStore.testIntervalSeconds
     }
 
     convenience init() {
         self.init(
-            storage: WellnessSettingsStorage()
+            storage: WellnessSettingsStorage(),
+            developerSettingsStore:
+                DeveloperSettingsStore()
         )
     }
 
@@ -30,55 +49,79 @@ final class SettingsViewModel: ObservableObject {
         do {
             try storage.save(settings)
 
-            hasError = false
-            statusMessage = "Settings saved successfully."
+            developerSettingsStore.fastTestingEnabled =
+                fastTestingEnabled
 
-            NotificationCenter.default.post(
-                name: .wellnessSettingsDidChange,
-                object: nil
+            developerSettingsStore.testIntervalSeconds =
+                testIntervalSeconds
+
+            hasError = false
+            statusMessage =
+                "Settings saved successfully."
+
+            BuddyLogger.info(
+                "Settings and developer options were saved.",
+                category: .settings
             )
 
+            notifySchedulerOfChanges()
             clearStatusMessage(after: 3)
         } catch {
             hasError = true
             statusMessage =
-                "Unable to save settings: \(error.localizedDescription)"
+                "Unable to save settings: "
+                + error.localizedDescription
+
+            BuddyLogger.error(
+                "Unable to save settings: "
+                + error.localizedDescription,
+                category: .settings
+            )
         }
     }
 
     func resetToDefaults() {
         settings = .default
 
+        developerSettingsStore.reset()
+
+        fastTestingEnabled =
+            developerSettingsStore.fastTestingEnabled
+
+        testIntervalSeconds =
+            developerSettingsStore.testIntervalSeconds
+
         do {
             try storage.save(settings)
 
             hasError = false
-            statusMessage = "Default settings restored."
+            statusMessage =
+                "Default settings restored."
 
-            NotificationCenter.default.post(
-                name: .wellnessSettingsDidChange,
-                object: nil
-            )
-
+            notifySchedulerOfChanges()
             clearStatusMessage(after: 3)
         } catch {
             hasError = true
             statusMessage =
-                "Unable to reset settings: \(error.localizedDescription)"
+                "Unable to restore defaults: "
+                + error.localizedDescription
         }
     }
 
     private func validateSettings() -> Bool {
-        guard !settings.hydration.weekdays.isEmpty else {
-            hasError = true
-            statusMessage = "Select at least one active day."
+        guard settings.hydration.intervalMinutes > 0 else {
+            showValidationError(
+                "The reminder interval must be greater than zero."
+            )
+
             return false
         }
 
-        guard settings.hydration.intervalMinutes > 0 else {
-            hasError = true
-            statusMessage =
-                "The reminder interval must be greater than zero."
+        guard !settings.hydration.weekdays.isEmpty else {
+            showValidationError(
+                "Select at least one active day."
+            )
+
             return false
         }
 
@@ -91,13 +134,41 @@ final class SettingsViewModel: ObservableObject {
             + settings.hydration.endMinute
 
         guard endMinutes > startMinutes else {
-            hasError = true
-            statusMessage =
+            showValidationError(
                 "The end time must be later than the start time."
+            )
+
+            return false
+        }
+
+        guard testIntervalSeconds >= 1 else {
+            showValidationError(
+                "The test interval must be at least one second."
+            )
+
             return false
         }
 
         return true
+    }
+
+    private func showValidationError(
+        _ message: String
+    ) {
+        hasError = true
+        statusMessage = message
+
+        BuddyLogger.warning(
+            message,
+            category: .settings
+        )
+    }
+
+    private func notifySchedulerOfChanges() {
+        NotificationCenter.default.post(
+            name: .wellnessSettingsDidChange,
+            object: nil
+        )
     }
 
     private func clearStatusMessage(
