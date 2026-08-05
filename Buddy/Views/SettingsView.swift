@@ -2,20 +2,26 @@ import SwiftUI
 
 @MainActor
 struct SettingsView: View {
-    @StateObject private var viewModel: SettingsViewModel
+    @StateObject private var viewModel:
+        SettingsViewModel
 
     init() {
-        _viewModel = StateObject(
-            wrappedValue: SettingsViewModel()
-        )
+        _viewModel =
+            StateObject(
+                wrappedValue:
+                    SettingsViewModel()
+            )
     }
 
     init(
-        viewModel: SettingsViewModel
+        viewModel:
+            SettingsViewModel
     ) {
-        _viewModel = StateObject(
-            wrappedValue: viewModel
-        )
+        _viewModel =
+            StateObject(
+                wrappedValue:
+                    viewModel
+            )
     }
 
     var body: some View {
@@ -28,6 +34,7 @@ struct SettingsView: View {
                 VStack(spacing: 18) {
                     scheduleOverviewCard
                     hydrationCard
+                    supplementCard
                     developerCard
                 }
                 .padding(20)
@@ -40,18 +47,26 @@ struct SettingsView: View {
         .frame(
             minWidth: 590,
             idealWidth: 620,
-            minHeight: 650,
-            idealHeight: 700
+            minHeight: 720,
+            idealHeight: 780
         )
         .background(
-            Color(nsColor: .windowBackgroundColor)
+            Color(
+                nsColor:
+                    .windowBackgroundColor
+            )
         )
         .animation(
-            .easeOut(duration: 0.16),
-            value: viewModel.hasUnsavedChanges
+            .easeOut(
+                duration: 0.16
+            ),
+            value:
+                viewModel
+                    .hasUnsavedChanges
         )
         .onAppear {
-            viewModel.reloadFromStorage()
+            viewModel
+                .reloadFromStorage()
         }
     }
 
@@ -68,8 +83,10 @@ struct SettingsView: View {
                             Color.blue,
                             Color.indigo
                         ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
+                        startPoint:
+                            .topLeading,
+                        endPoint:
+                            .bottomTrailing
                     )
                 )
                 .frame(
@@ -77,9 +94,14 @@ struct SettingsView: View {
                     height: 48
                 )
 
-                Image(systemName: "circle.dotted")
-                    .font(.system(size: 23))
-                    .foregroundStyle(.white)
+                Image(
+                    systemName:
+                        "circle.dotted"
+                )
+                .font(
+                    .system(size: 23)
+                )
+                .foregroundStyle(.white)
             }
 
             VStack(
@@ -90,8 +112,7 @@ struct SettingsView: View {
                     .font(.title2.bold())
 
                 Text(
-                    "Configure how Buddy supports "
-                    + "your workday wellness."
+                    "Configure how Buddy supports your workday wellness."
                 )
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
@@ -109,44 +130,51 @@ struct SettingsView: View {
         )
     }
 
-    private var scheduleOverviewCard: some View {
+    private var scheduleOverviewCard:
+        some View {
         SettingsCard(
             title: "Current Schedule",
-            systemImage: "calendar.badge.clock"
+            systemImage:
+                "calendar.badge.clock"
         ) {
             HStack(spacing: 16) {
                 scheduleMetric(
-                    title: "Interval",
+                    title: "Hydration",
                     value:
                         "\(viewModel.settings.hydration.intervalMinutes) min",
-                    systemImage: "timer"
+                    systemImage:
+                        "drop.fill"
                 )
 
                 Divider()
                     .frame(height: 42)
 
                 scheduleMetric(
-                    title: "Active hours",
-                    value: activeHoursText,
-                    systemImage: "clock"
+                    title: "Supplements",
+                    value:
+                        supplementScheduleSummary,
+                    systemImage:
+                        "pill.fill"
                 )
 
                 Divider()
                     .frame(height: 42)
 
                 scheduleMetric(
-                    title: "Days",
-                    value: selectedDaysText,
-                    systemImage: "calendar"
+                    title: "Active reminders",
+                    value:
+                        "\(enabledReminderCount)",
+                    systemImage:
+                        "bell.fill"
                 )
             }
 
-            if viewModel.fastTestingEnabled {
+            if viewModel
+                .fastTestingEnabled {
                 Label(
-                    "Developer testing is active. "
-                    + "Reminders fire every "
-                    + "\(viewModel.testIntervalSeconds) seconds.",
-                    systemImage: "hammer.fill"
+                    "Developer testing is active. Reminders fire every \(viewModel.testIntervalSeconds) seconds.",
+                    systemImage:
+                        "hammer.fill"
                 )
                 .font(.caption)
                 .foregroundStyle(.orange)
@@ -155,37 +183,57 @@ struct SettingsView: View {
         }
     }
 
-    private var hydrationCard: some View {
+    private var hydrationCard:
+        some View {
         SettingsCard(
             title: "Hydration",
             systemImage: "drop.fill"
         ) {
             HydrationSettingsSection(
                 hydration:
-                    $viewModel.settings.hydration
+                    $viewModel
+                        .settings
+                        .hydration
             )
         }
     }
 
-    private var developerCard: some View {
+    private var supplementCard:
+        some View {
+        SettingsCard(
+            title: "Supplement",
+            systemImage: "pill.fill"
+        ) {
+            SupplementSettingsSection(
+                reminder:
+                    viewModel
+                        .supplementReminderBinding
+            )
+        }
+    }
+
+    private var developerCard:
+        some View {
         SettingsCard(
             title: "Developer Testing",
             systemImage: "hammer.fill"
         ) {
             Toggle(
                 "Enable fast reminder testing",
-                isOn: $viewModel.fastTestingEnabled
+                isOn:
+                    $viewModel
+                        .fastTestingEnabled
             )
             .toggleStyle(.switch)
 
             Text(
-                "Fast testing ignores the normal interval, "
-                + "active days and working hours."
+                "Fast testing ignores normal intervals, active days, and configured times."
             )
             .font(.caption)
             .foregroundStyle(.secondary)
 
-            if viewModel.fastTestingEnabled {
+            if viewModel
+                .fastTestingEnabled {
                 Divider()
 
                 HStack {
@@ -193,11 +241,12 @@ struct SettingsView: View {
                         alignment: .leading,
                         spacing: 3
                     ) {
-                        Text("Test reminder interval")
+                        Text(
+                            "Test reminder interval"
+                        )
 
                         Text(
-                            "Use a short interval while "
-                            + "developing Buddy."
+                            "Use a short interval while developing Buddy."
                         )
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -207,7 +256,8 @@ struct SettingsView: View {
 
                     Stepper(
                         value:
-                            $viewModel.testIntervalSeconds,
+                            $viewModel
+                                .testIntervalSeconds,
                         in: 1...60,
                         step: 1
                     ) {
@@ -217,7 +267,8 @@ struct SettingsView: View {
                         .monospacedDigit()
                         .frame(
                             minWidth: 65,
-                            alignment: .trailing
+                            alignment:
+                                .trailing
                         )
                     }
                 }
@@ -231,8 +282,11 @@ struct SettingsView: View {
 
             Spacer()
 
-            Button("Restore Defaults") {
-                viewModel.resetToDefaults()
+            Button(
+                "Restore Defaults"
+            ) {
+                viewModel
+                    .resetToDefaults()
             }
 
             saveButton
@@ -241,7 +295,8 @@ struct SettingsView: View {
     }
 
     @ViewBuilder
-    private var statusArea: some View {
+    private var statusArea:
+        some View {
         if let statusMessage =
             viewModel.statusMessage {
             Label(
@@ -254,14 +309,16 @@ struct SettingsView: View {
             .font(.callout)
             .foregroundStyle(
                 viewModel.hasError
-                    ? Color.red
-                    : Color.green
+                ? Color.red
+                : Color.green
             )
             .transition(.opacity)
-        } else if viewModel.hasUnsavedChanges {
+        } else if viewModel
+            .hasUnsavedChanges {
             Label(
                 "Unsaved changes",
-                systemImage: "circle.fill"
+                systemImage:
+                    "circle.fill"
             )
             .font(.callout)
             .foregroundStyle(.secondary)
@@ -269,27 +326,35 @@ struct SettingsView: View {
         }
     }
 
-    private var saveButton: some View {
+    private var saveButton:
+        some View {
         Button {
             viewModel.save()
         } label: {
             Text("Save Changes")
                 .foregroundStyle(
-                    viewModel.hasUnsavedChanges
-                        ? Color.white
-                        : Color.primary.opacity(0.72)
+                    viewModel
+                        .hasUnsavedChanges
+                    ? Color.white
+                    : Color.primary
+                        .opacity(0.72)
                 )
-                .frame(minWidth: 105)
+                .frame(
+                    minWidth: 105
+                )
         }
-        .buttonStyle(.borderedProminent)
+        .buttonStyle(
+            .borderedProminent
+        )
         .controlSize(.large)
         .tint(
             viewModel.hasUnsavedChanges
-                ? Color.accentColor
-                : Color.gray.opacity(0.45)
+            ? Color.accentColor
+            : Color.gray.opacity(0.45)
         )
         .disabled(
-            !viewModel.hasUnsavedChanges
+            !viewModel
+                .hasUnsavedChanges
         )
         .keyboardShortcut(
             "s",
@@ -297,12 +362,16 @@ struct SettingsView: View {
         )
         .help(
             viewModel.hasUnsavedChanges
-                ? "Save your changes"
-                : "No unsaved changes"
+            ? "Save your changes"
+            : "No unsaved changes"
         )
         .animation(
-            .easeOut(duration: 0.16),
-            value: viewModel.hasUnsavedChanges
+            .easeOut(
+                duration: 0.16
+            ),
+            value:
+                viewModel
+                    .hasUnsavedChanges
         )
     }
 
@@ -312,9 +381,12 @@ struct SettingsView: View {
         systemImage: String
     ) -> some View {
         HStack(spacing: 9) {
-            Image(systemName: systemImage)
-                .foregroundStyle(.blue)
-                .frame(width: 18)
+            Image(
+                systemName:
+                    systemImage
+            )
+            .foregroundStyle(.blue)
+            .frame(width: 18)
 
             VStack(
                 alignment: .leading,
@@ -322,187 +394,67 @@ struct SettingsView: View {
             ) {
                 Text(title)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(
+                        .secondary
+                    )
 
                 Text(value)
                     .font(
                         .system(
                             size: 13,
-                            weight: .semibold
+                            weight:
+                                .semibold
                         )
                     )
                     .lineLimit(1)
             }
         }
-        .frame(maxWidth: .infinity)
-    }
-
-    private var activeHoursText: String {
-        let hydration =
-            viewModel.settings.hydration
-
-        return timeString(
-            hour: hydration.startHour,
-            minute: hydration.startMinute
-        )
-        + "–"
-        + timeString(
-            hour: hydration.endHour,
-            minute: hydration.endMinute
+        .frame(
+            maxWidth: .infinity
         )
     }
 
-    private var selectedDaysText: String {
-        let selectedWeekdays =
-            viewModel.settings.hydration.weekdays
-
-        guard !selectedWeekdays.isEmpty else {
-            return "None"
-        }
-
-        let orderedWeekdays =
-            Weekday.allCases
-
-        guard selectedWeekdays.count > 1 else {
-            return orderedWeekdays
-                .first {
-                    selectedWeekdays.contains($0)
-                }?
-                .shortName
-                ?? "None"
-        }
-
-        if selectedWeekdays.count
-            == orderedWeekdays.count {
-            guard let firstDay =
-                orderedWeekdays.first,
-                let lastDay =
-                orderedWeekdays.last
-            else {
-                return "None"
-            }
-
-            return
-                "\(firstDay.shortName)–\(lastDay.shortName)"
-        }
-
-        guard let startIndex =
-            orderedWeekdays.indices.first(
-                where: { index in
-                    let previousIndex =
-                        index
-                        == orderedWeekdays.startIndex
-                        ? orderedWeekdays.index(
-                            before:
-                                orderedWeekdays.endIndex
-                        )
-                        : orderedWeekdays.index(
-                            before: index
-                        )
-
-                    return selectedWeekdays.contains(
-                        orderedWeekdays[index]
-                    )
-                    && !selectedWeekdays.contains(
-                        orderedWeekdays[
-                            previousIndex
-                        ]
-                    )
-                }
-            )
-        else {
-            return individualDaysText(
-                selectedWeekdays,
-                orderedWeekdays:
-                    orderedWeekdays
-            )
-        }
-
-        var consecutiveDays: [Weekday] = []
-        var currentIndex = startIndex
-
-        while selectedWeekdays.contains(
-            orderedWeekdays[currentIndex]
-        ) {
-            consecutiveDays.append(
-                orderedWeekdays[currentIndex]
-            )
-
-            currentIndex =
-                orderedWeekdays.index(
-                    after: currentIndex
-                )
-
-            if currentIndex
-                == orderedWeekdays.endIndex {
-                currentIndex =
-                    orderedWeekdays.startIndex
-            }
-
-            if currentIndex == startIndex {
-                break
-            }
-        }
-
-        if consecutiveDays.count
-            == selectedWeekdays.count,
-           let firstDay =
-            consecutiveDays.first,
-           let lastDay =
-            consecutiveDays.last {
-            return
-                "\(firstDay.shortName)–\(lastDay.shortName)"
-        }
-
-        return individualDaysText(
-            selectedWeekdays,
-            orderedWeekdays:
-                orderedWeekdays
-        )
-    }
-
-    private func individualDaysText(
-        _ selectedWeekdays: Set<Weekday>,
-        orderedWeekdays: [Weekday]
-    ) -> String {
-        orderedWeekdays
+    private var enabledReminderCount:
+        Int {
+        viewModel.settings.reminders
             .filter {
-                selectedWeekdays.contains($0)
+                $0.isEnabled
             }
-            .map(\.shortName)
-            .joined(separator: ", ")
+            .count
     }
 
-    private func timeString(
-        hour: Int,
-        minute: Int
-    ) -> String {
-        var components = DateComponents()
-        components.hour = hour
-        components.minute = minute
+    private var supplementScheduleSummary:
+        String {
+        let supplement =
+            viewModel.supplementReminder
 
-        guard let date =
-            Calendar.current.date(
-                from: components
-            )
+        guard supplement.isEnabled
         else {
-            return String(
-                format: "%02d:%02d",
-                hour,
-                minute
-            )
+            return "Off"
         }
 
-        return date.formatted(
-            date: .omitted,
-            time: .shortened
-        )
+        guard case .fixedTimes(
+            let schedule
+        ) = supplement.schedule
+        else {
+            return "Not configured"
+        }
+
+        let count =
+            schedule.times.count
+
+        if count == 1 {
+            return "1 time daily"
+        }
+
+        return "\(count) times daily"
     }
 }
 
 private struct SettingsCard<
     Content: View
 >: View {
+
     let title: String
     let systemImage: String
     let content: Content
@@ -510,10 +462,12 @@ private struct SettingsCard<
     init(
         title: String,
         systemImage: String,
-        @ViewBuilder content: () -> Content
+        @ViewBuilder
+        content: () -> Content
     ) {
         self.title = title
-        self.systemImage = systemImage
+        self.systemImage =
+            systemImage
         self.content = content()
     }
 
@@ -524,7 +478,8 @@ private struct SettingsCard<
         ) {
             Label(
                 title,
-                systemImage: systemImage
+                systemImage:
+                    systemImage
             )
             .font(
                 .system(
@@ -558,12 +513,14 @@ private struct SettingsCard<
                     style: .continuous
                 )
                 .stroke(
-                    Color.primary.opacity(0.08),
+                    Color.primary
+                        .opacity(0.08),
                     lineWidth: 1
                 )
             }
             .shadow(
-                color: .black.opacity(0.05),
+                color:
+                    .black.opacity(0.05),
                 radius: 10,
                 y: 4
             )

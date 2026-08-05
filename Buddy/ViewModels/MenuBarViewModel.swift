@@ -2,12 +2,21 @@ import Foundation
 import Combine
 
 @MainActor
-final class MenuBarViewModel: ObservableObject {
+final class MenuBarViewModel:
+    ObservableObject {
+
     @Published private(set)
     var settings: WellnessSettings
 
     @Published private(set)
     var nextReminderDate: Date?
+
+    @Published private(set)
+    var nextReminderTitle: String?
+
+    @Published private(set)
+    var nextReminderCategory:
+        ReminderCategory?
 
     @Published private(set)
     var isBuddyVisible: Bool
@@ -21,7 +30,8 @@ final class MenuBarViewModel: ObservableObject {
     private let runtimeStore:
         ReminderRuntimeStore
 
-    private var observers: [NSObjectProtocol] = []
+    private var observers:
+        [NSObjectProtocol] = []
 
     init(
         settingsStorage:
@@ -31,19 +41,35 @@ final class MenuBarViewModel: ObservableObject {
             ReminderRuntimeStore =
                 ReminderRuntimeStore()
     ) {
-        self.settingsStorage = settingsStorage
-        self.runtimeStore = runtimeStore
+        self.settingsStorage =
+            settingsStorage
 
-        settings = settingsStorage.load()
+        self.runtimeStore =
+            runtimeStore
+
+        settings =
+            settingsStorage.load()
 
         remindersPaused =
             runtimeStore.remindersPaused
 
-        nextReminderDate =
-            runtimeStore.nextHydrationReminderDate
-
         isBuddyVisible =
             runtimeStore.buddyVisible
+
+        nextReminderDate =
+            runtimeStore.nextReminderDate
+
+        nextReminderTitle =
+            runtimeStore.nextReminderTitle
+
+        nextReminderCategory =
+            runtimeStore.nextReminderCategory
+
+        if remindersPaused {
+            nextReminderDate = nil
+            nextReminderTitle = nil
+            nextReminderCategory = nil
+        }
 
         beginObservingChanges()
     }
@@ -56,10 +82,11 @@ final class MenuBarViewModel: ObservableObject {
     }
 
     func toggleBuddyVisibility() {
-        let notificationName: Notification.Name =
-            isBuddyVisible
-            ? .hideBuddyRequested
-            : .showBuddyRequested
+        let notificationName:
+            Notification.Name =
+                isBuddyVisible
+                ? .hideBuddyRequested
+                : .showBuddyRequested
 
         NotificationCenter.default.post(
             name: notificationName,
@@ -74,19 +101,19 @@ final class MenuBarViewModel: ObservableObject {
             remindersPaused
 
         if remindersPaused {
-            runtimeStore
-                .nextHydrationReminderDate = nil
-
-            nextReminderDate = nil
+            runtimeStore.clearNextReminder()
+            clearNextReminder()
         }
 
         NotificationCenter.default.post(
-            name: .reminderPauseStateDidChange,
+            name:
+                .reminderPauseStateDidChange,
             object: nil
         )
 
         NotificationCenter.default.post(
-            name: .reminderRuntimeDidChange,
+            name:
+                .reminderRuntimeDidChange,
             object: nil
         )
 
@@ -129,12 +156,56 @@ final class MenuBarViewModel: ObservableObject {
             : "checkmark.circle.fill"
     }
 
-    var scheduleSummary: String {
-        let hydration = settings.hydration
+    var reminderSectionTitle: String {
+        nextReminderTitle
+            ?? defaultReminderTitle
+    }
 
-        return "Every "
-            + "\(hydration.intervalMinutes) min · "
-            + activeHoursText
+    var reminderSectionSystemImage: String {
+        activeCategory.systemImage
+    }
+
+    var reminderSectionColor:
+        MenuBarReminderColor {
+        switch activeCategory {
+        case .hydration:
+            return .blue
+
+        case .supplement:
+            return .purple
+
+        case .stretch:
+            return .orange
+
+        case .eyeBreak:
+            return .indigo
+
+        case .walk:
+            return .green
+
+        case .custom:
+            return .blue
+        }
+    }
+
+    var scheduleSummary: String {
+        guard let definition =
+            activeReminderDefinition
+        else {
+            return "No enabled reminders"
+        }
+
+        switch definition.schedule {
+        case .interval(let schedule):
+            return intervalSummary(
+                schedule
+            )
+
+        case .fixedTimes(let schedule):
+            return fixedTimesSummary(
+                schedule
+            )
+        }
     }
 
     var nextReminderText: String {
@@ -142,119 +213,233 @@ final class MenuBarViewModel: ObservableObject {
             return "Reminders are paused"
         }
 
-        guard settings.hydration.isEnabled else {
-            return "Hydration reminders are off"
+        guard hasEnabledReminders else {
+            return "No reminders are enabled"
         }
 
         guard let nextReminderDate else {
             return "Calculating next reminder…"
         }
 
-        return "Next reminder "
-            + nextReminderDate.formatted(
-                date: .omitted,
-                time: .shortened
-            )
-    }
-
-    private var activeHoursText: String {
-        let hydration = settings.hydration
-
-        return timeString(
-            hour: hydration.startHour,
-            minute: hydration.startMinute
-        )
-        + "–"
-        + timeString(
-            hour: hydration.endHour,
-            minute: hydration.endMinute
-        )
-    }
-
-    private func timeString(
-        hour: Int,
-        minute: Int
-    ) -> String {
-        var components = DateComponents()
-        components.hour = hour
-        components.minute = minute
-
-        guard let date =
-            Calendar.current.date(
-                from: components
-            )
-        else {
-            return String(
-                format: "%02d:%02d",
-                hour,
-                minute
-            )
+        if Calendar.current.isDateInToday(
+            nextReminderDate
+        ) {
+            return "Next reminder "
+                + nextReminderDate.formatted(
+                    date: .omitted,
+                    time: .shortened
+                )
         }
 
-        return date.formatted(
-            date: .omitted,
-            time: .shortened
-        )
+        return "Next reminder "
+            + nextReminderDate.formatted(
+                .dateTime
+                    .weekday(.abbreviated)
+                    .hour()
+                    .minute()
+            )
+    }
+
+    private var hasEnabledReminders: Bool {
+        settings.reminders.contains {
+            $0.isEnabled
+                && !$0.weekdays.isEmpty
+        }
+    }
+
+    private var activeCategory:
+        ReminderCategory {
+        nextReminderCategory
+            ?? activeReminderDefinition?
+                .category
+            ?? .hydration
+    }
+
+    private var defaultReminderTitle: String {
+        activeReminderDefinition?
+            .title
+            ?? "Reminders"
+    }
+
+    private var activeReminderDefinition:
+        ReminderDefinition? {
+        if let definitionID =
+            runtimeStore
+                .nextReminderDefinitionID,
+           let matchingDefinition =
+            settings.reminders.first(
+                where: {
+                    $0.id == definitionID
+                }
+            ) {
+            return matchingDefinition
+        }
+
+        if let nextReminderCategory,
+           let matchingDefinition =
+            settings.reminders.first(
+                where: {
+                    $0.category
+                        == nextReminderCategory
+                        && $0.isEnabled
+                }
+            ) {
+            return matchingDefinition
+        }
+
+        return settings.reminders.first {
+            $0.isEnabled
+                && !$0.weekdays.isEmpty
+        }
+    }
+
+    private func intervalSummary(
+        _ schedule:
+            IntervalReminderSchedule
+    ) -> String {
+        "Every "
+            + "\(schedule.intervalMinutes) min · "
+            + schedule.startTime.formatted
+            + "–"
+            + schedule.endTime.formatted
+    }
+
+    private func fixedTimesSummary(
+        _ schedule:
+            FixedTimeReminderSchedule
+    ) -> String {
+        guard !schedule.times.isEmpty else {
+            return "No times configured"
+        }
+
+        return schedule.times
+            .sorted()
+            .map(\.formatted)
+            .joined(separator: ", ")
     }
 
     private func beginObservingChanges() {
         let settingsObserver =
-            NotificationCenter.default.addObserver(
-                forName:
-                    .wellnessSettingsDidChange,
-                object: nil,
-                queue: .main
-            ) { [weak self] _ in
-                Task { @MainActor in
-                    self?.reload()
+            NotificationCenter.default
+                .addObserver(
+                    forName:
+                        .wellnessSettingsDidChange,
+                    object: nil,
+                    queue: .main
+                ) {
+                    [weak self] _ in
+
+                    Task { @MainActor in
+                        self?.reloadSettings()
+                    }
                 }
-            }
 
         let runtimeObserver =
-            NotificationCenter.default.addObserver(
-                forName:
-                    .reminderRuntimeDidChange,
-                object: nil,
-                queue: .main
-            ) { [weak self] _ in
-                Task { @MainActor in
-                    self?.reload()
+            NotificationCenter.default
+                .addObserver(
+                    forName:
+                        .reminderRuntimeDidChange,
+                    object: nil,
+                    queue: .main
+                ) {
+                    [weak self] _ in
+
+                    Task { @MainActor in
+                        self?.reloadRuntime()
+                    }
                 }
-            }
+
+        let scheduleObserver =
+            NotificationCenter.default
+                .addObserver(
+                    forName:
+                        .genericReminderScheduleDidChange,
+                    object: nil,
+                    queue: .main
+                ) {
+                    [weak self] _ in
+
+                    Task { @MainActor in
+                        self?.reloadSchedule()
+                    }
+                }
 
         let visibilityObserver =
-            NotificationCenter.default.addObserver(
-                forName:
-                    .buddyVisibilityDidChange,
-                object: nil,
-                queue: .main
-            ) { [weak self] _ in
-                Task { @MainActor in
-                    self?.reloadVisibility()
+            NotificationCenter.default
+                .addObserver(
+                    forName:
+                        .buddyVisibilityDidChange,
+                    object: nil,
+                    queue: .main
+                ) {
+                    [weak self] _ in
+
+                    Task { @MainActor in
+                        self?.reloadVisibility()
+                    }
                 }
-            }
 
         observers = [
             settingsObserver,
             runtimeObserver,
+            scheduleObserver,
             visibilityObserver
         ]
     }
 
-    private func reload() {
-        settings = settingsStorage.load()
+    private func reloadSettings() {
+        settings =
+            settingsStorage.load()
 
+        reloadRuntime()
+        reloadSchedule()
+    }
+
+    private func reloadRuntime() {
         remindersPaused =
             runtimeStore.remindersPaused
 
-        nextReminderDate =
-            runtimeStore.nextHydrationReminderDate
+        if remindersPaused {
+            clearNextReminder()
+        } else {
+            reloadSchedule()
+        }
 
         reloadVisibility()
+    }
+
+    private func reloadSchedule() {
+        guard !runtimeStore.remindersPaused else {
+            clearNextReminder()
+            return
+        }
+
+        nextReminderDate =
+            runtimeStore.nextReminderDate
+
+        nextReminderTitle =
+            runtimeStore.nextReminderTitle
+
+        nextReminderCategory =
+            runtimeStore.nextReminderCategory
     }
 
     private func reloadVisibility() {
         isBuddyVisible =
             runtimeStore.buddyVisible
     }
+
+    private func clearNextReminder() {
+        nextReminderDate = nil
+        nextReminderTitle = nil
+        nextReminderCategory = nil
+    }
+}
+
+enum MenuBarReminderColor {
+    case blue
+    case purple
+    case orange
+    case indigo
+    case green
 }

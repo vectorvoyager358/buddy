@@ -2,28 +2,43 @@ import Foundation
 
 @MainActor
 final class ReminderManager {
-    private let notificationManager: NotificationManager
-    private let soundPlayer: ReminderSoundPlayer
-    private let buddyViewModel: BuddyViewModel
+    private let notificationManager:
+        NotificationManager
 
-    private var scheduledTasks: [
-        UUID: Task<Void, Never>
-    ] = [:]
+    private let soundPlayer:
+        ReminderSoundPlayer
 
-    var onReminderTriggered: (() -> Void)?
-    var onReminderCompleted: ((Reminder) -> Void)?
-    var onReminderSnoozed: ((Reminder) -> Void)?
-    var onReminderSkipped: ((Reminder) -> Void)?
-    var onReminderResolved: (() -> Void)?
+    private let buddyViewModel:
+        BuddyViewModel
+
+    private var scheduledTasks:
+        [UUID: Task<Void, Never>] = [:]
+
+    var onReminderTriggered:
+        (() -> Void)?
+
+    var onReminderCompleted:
+        ((Reminder) -> Void)?
+
+    var onReminderSnoozed:
+        ((Reminder, TimeInterval) -> Void)?
+
+    var onReminderSkipped:
+        ((Reminder) -> Void)?
 
     init(
         notificationManager: NotificationManager,
         soundPlayer: ReminderSoundPlayer,
         buddyViewModel: BuddyViewModel
     ) {
-        self.notificationManager = notificationManager
-        self.soundPlayer = soundPlayer
-        self.buddyViewModel = buddyViewModel
+        self.notificationManager =
+            notificationManager
+
+        self.soundPlayer =
+            soundPlayer
+
+        self.buddyViewModel =
+            buddyViewModel
     }
 
     convenience init(
@@ -36,6 +51,28 @@ final class ReminderManager {
         )
     }
 
+    /// Immediately presents a reminder that has become due.
+    func present(
+        _ reminder: Reminder
+    ) {
+        BuddyLogger.notice(
+            "Reminder triggered: \(reminder.title).",
+            category: .reminders
+        )
+
+        soundPlayer.play()
+
+        buddyViewModel.showReminder(
+            reminder
+        )
+
+        onReminderTriggered?()
+    }
+
+    /// Schedules a standalone reminder after a delay.
+    ///
+    /// The generic scheduler normally handles primary scheduling.
+    /// This method remains available for isolated delayed reminders.
     func schedule(
         _ reminder: Reminder,
         after seconds: TimeInterval
@@ -59,7 +96,9 @@ final class ReminderManager {
             after: safeDelay
         )
 
-        let task = Task { [weak self] in
+        let task = Task {
+            [weak self] in
+
             do {
                 try await Task.sleep(
                     for: .seconds(safeDelay)
@@ -79,24 +118,16 @@ final class ReminderManager {
                 return
             }
 
-            BuddyLogger.notice(
-                "Reminder triggered: \(reminder.title).",
-                category: .reminders
-            )
+            scheduledTasks[
+                reminder.id
+            ] = nil
 
-            // The alert sound is mandatory for every Buddy reminder.
-            soundPlayer.play()
-
-            buddyViewModel.showReminder(
-                reminder
-            )
-
-            onReminderTriggered?()
-
-            scheduledTasks[reminder.id] = nil
+            present(reminder)
         }
 
-        scheduledTasks[reminder.id] = task
+        scheduledTasks[
+            reminder.id
+        ] = task
     }
 
     func complete(
@@ -112,8 +143,6 @@ final class ReminderManager {
         onReminderCompleted?(
             reminder
         )
-
-        onReminderResolved?()
     }
 
     func snooze(
@@ -126,22 +155,16 @@ final class ReminderManager {
         )
 
         BuddyLogger.info(
-            "Reminder snoozed: \(reminder.title) for \(Int(safeDelay)) seconds.",
+            "Reminder postponed: \(reminder.title) for \(Int(safeDelay)) seconds.",
             category: .reminders
         )
 
         buddyViewModel.showSnoozeConfirmation()
 
         onReminderSnoozed?(
-            reminder
-        )
-
-        schedule(
             reminder,
-            after: safeDelay
+            safeDelay
         )
-
-        onReminderResolved?()
     }
 
     func skip(
@@ -157,15 +180,18 @@ final class ReminderManager {
         onReminderSkipped?(
             reminder
         )
-
-        onReminderResolved?()
     }
 
     func cancel(
         reminderID: UUID
     ) {
-        scheduledTasks[reminderID]?.cancel()
-        scheduledTasks[reminderID] = nil
+        scheduledTasks[
+            reminderID
+        ]?.cancel()
+
+        scheduledTasks[
+            reminderID
+        ] = nil
 
         notificationManager.cancel(
             reminderID: reminderID

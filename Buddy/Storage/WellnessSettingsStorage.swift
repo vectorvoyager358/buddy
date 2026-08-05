@@ -10,13 +10,13 @@ final class WellnessSettingsStorage {
     ) {
         self.fileManager = fileManager
 
-        self.encoder = JSONEncoder()
-        self.encoder.outputFormatting = [
+        encoder = JSONEncoder()
+        encoder.outputFormatting = [
             .prettyPrinted,
             .sortedKeys
         ]
 
-        self.decoder = JSONDecoder()
+        decoder = JSONDecoder()
     }
 
     func load() -> WellnessSettings {
@@ -30,7 +30,12 @@ final class WellnessSettingsStorage {
                 category: .storage
             )
 
-            return .default
+            let defaultSettings =
+                WellnessSettings.default
+
+            try? save(defaultSettings)
+
+            return defaultSettings
         }
 
         do {
@@ -38,10 +43,24 @@ final class WellnessSettingsStorage {
                 contentsOf: fileURL
             )
 
-            let settings = try decoder.decode(
+            var settings = try decoder.decode(
                 WellnessSettings.self,
                 from: data
             )
+
+            let didMigrate =
+                migrateIfNeeded(
+                    settings: &settings
+                )
+
+            if didMigrate {
+                try save(settings)
+
+                BuddyLogger.notice(
+                    "Wellness settings migrated to schema version \(WellnessSettings.currentSchemaVersion).",
+                    category: .storage
+                )
+            }
 
             BuddyLogger.info(
                 "Wellness settings loaded successfully.",
@@ -51,12 +70,11 @@ final class WellnessSettingsStorage {
             return settings
         } catch {
             BuddyLogger.error(
-                "Unable to load wellness settings: "
-                + error.localizedDescription,
+                "Unable to load wellness settings: \(error.localizedDescription). Using defaults.",
                 category: .storage
             )
 
-            return .default
+            return WellnessSettings.default
         }
     }
 
@@ -71,8 +89,12 @@ final class WellnessSettingsStorage {
             withIntermediateDirectories: true
         )
 
+        var settingsToSave = settings
+        settingsToSave.schemaVersion =
+            WellnessSettings.currentSchemaVersion
+
         let data = try encoder.encode(
-            settings
+            settingsToSave
         )
 
         try data.write(
@@ -86,31 +108,16 @@ final class WellnessSettingsStorage {
         )
     }
 
-    func reset() throws {
-        let fileURL = settingsFileURL()
-
-        guard fileManager.fileExists(
-            atPath: fileURL.path
-        ) else {
-            BuddyLogger.info(
-                "No wellness settings file existed to reset.",
-                category: .storage
+    func settingsFileURL() -> URL {
+        applicationSupportDirectoryURL()
+            .appendingPathComponent(
+                "wellness-settings.json",
+                isDirectory: false
             )
-
-            return
-        }
-
-        try fileManager.removeItem(
-            at: fileURL
-        )
-
-        BuddyLogger.notice(
-            "Wellness settings were reset.",
-            category: .storage
-        )
     }
 
-    private func applicationSupportDirectoryURL() -> URL {
+    private func applicationSupportDirectoryURL()
+        -> URL {
         let applicationSupportURL =
             fileManager.urls(
                 for: .applicationSupportDirectory,
@@ -124,11 +131,24 @@ final class WellnessSettingsStorage {
             )
     }
 
-    private func settingsFileURL() -> URL {
-        applicationSupportDirectoryURL()
-            .appendingPathComponent(
-                "wellness-settings.json",
-                isDirectory: false
-            )
+    private func migrateIfNeeded(
+        settings: inout WellnessSettings
+    ) -> Bool {
+        var didMigrate = false
+
+        if settings.schemaVersion
+            < WellnessSettings.currentSchemaVersion {
+            settings.schemaVersion =
+                WellnessSettings.currentSchemaVersion
+
+            didMigrate = true
+        }
+
+        if settings.hydrationReminder == nil {
+            settings.synchronizeLegacyHydrationReminder()
+            didMigrate = true
+        }
+
+        return didMigrate
     }
 }

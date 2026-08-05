@@ -16,6 +16,11 @@ extension Notification.Name {
             "reminderRuntimeDidChange"
         )
 
+    static let genericReminderScheduleDidChange =
+        Notification.Name(
+            "genericReminderScheduleDidChange"
+        )
+
     static let buddyVisibilityDidChange =
         Notification.Name(
             "buddyVisibilityDidChange"
@@ -35,4 +40,18 @@ extension Notification.Name {
         Notification.Name(
             "quitBuddyRequested"
         )
+}
+
+enum ReminderScheduleNotificationKey {
+    static let definitionID =
+        "definitionID"
+
+    static let title =
+        "title"
+
+    static let category =
+        "category"
+
+    static let nextDate =
+        "nextDate"
 }
