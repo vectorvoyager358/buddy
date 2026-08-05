@@ -1,5 +1,5 @@
-import Foundation
 import Combine
+import Foundation
 
 @MainActor
 final class SettingsViewModel: ObservableObject {
@@ -14,6 +14,10 @@ final class SettingsViewModel: ObservableObject {
     private let storage: WellnessSettingsStorage
     private let developerSettingsStore: DeveloperSettingsStore
 
+    private var savedSettings: WellnessSettings
+    private var savedFastTestingEnabled: Bool
+    private var savedTestIntervalSeconds: Int
+
     private var clearStatusTask: Task<Void, Never>?
 
     init(
@@ -21,27 +25,71 @@ final class SettingsViewModel: ObservableObject {
         developerSettingsStore: DeveloperSettingsStore
     ) {
         self.storage = storage
-        self.developerSettingsStore =
-            developerSettingsStore
+        self.developerSettingsStore = developerSettingsStore
 
-        self.settings = storage.load()
+        let loadedSettings = storage.load()
 
-        self.fastTestingEnabled =
+        let loadedFastTestingEnabled =
             developerSettingsStore.fastTestingEnabled
 
-        self.testIntervalSeconds =
+        let loadedTestIntervalSeconds =
             developerSettingsStore.testIntervalSeconds
+
+        settings = loadedSettings
+        fastTestingEnabled = loadedFastTestingEnabled
+        testIntervalSeconds = loadedTestIntervalSeconds
+
+        savedSettings = loadedSettings
+        savedFastTestingEnabled = loadedFastTestingEnabled
+        savedTestIntervalSeconds = loadedTestIntervalSeconds
     }
 
     convenience init() {
         self.init(
             storage: WellnessSettingsStorage(),
-            developerSettingsStore:
-                DeveloperSettingsStore()
+            developerSettingsStore: DeveloperSettingsStore()
+        )
+    }
+
+    var hasUnsavedChanges: Bool {
+        settings != savedSettings
+            || fastTestingEnabled != savedFastTestingEnabled
+            || testIntervalSeconds != savedTestIntervalSeconds
+    }
+
+    func reloadFromStorage() {
+        clearStatusTask?.cancel()
+
+        let loadedSettings = storage.load()
+
+        let loadedFastTestingEnabled =
+            developerSettingsStore.fastTestingEnabled
+
+        let loadedTestIntervalSeconds =
+            developerSettingsStore.testIntervalSeconds
+
+        settings = loadedSettings
+        fastTestingEnabled = loadedFastTestingEnabled
+        testIntervalSeconds = loadedTestIntervalSeconds
+
+        savedSettings = loadedSettings
+        savedFastTestingEnabled = loadedFastTestingEnabled
+        savedTestIntervalSeconds = loadedTestIntervalSeconds
+
+        hasError = false
+        statusMessage = nil
+
+        BuddyLogger.debug(
+            "Settings reloaded from saved storage.",
+            category: .settings
         )
     }
 
     func save() {
+        guard hasUnsavedChanges else {
+            return
+        }
+
         guard validateSettings() else {
             return
         }
@@ -55,9 +103,10 @@ final class SettingsViewModel: ObservableObject {
             developerSettingsStore.testIntervalSeconds =
                 testIntervalSeconds
 
+            updateSavedSnapshot()
+
             hasError = false
-            statusMessage =
-                "Settings saved successfully."
+            statusMessage = "Settings saved successfully."
 
             BuddyLogger.info(
                 "Settings and developer options were saved.",
@@ -68,6 +117,7 @@ final class SettingsViewModel: ObservableObject {
             clearStatusMessage(after: 3)
         } catch {
             hasError = true
+
             statusMessage =
                 "Unable to save settings: "
                 + error.localizedDescription
@@ -94,18 +144,37 @@ final class SettingsViewModel: ObservableObject {
         do {
             try storage.save(settings)
 
+            updateSavedSnapshot()
+
             hasError = false
-            statusMessage =
-                "Default settings restored."
+            statusMessage = "Default settings restored."
+
+            BuddyLogger.notice(
+                "Default settings were restored.",
+                category: .settings
+            )
 
             notifySchedulerOfChanges()
             clearStatusMessage(after: 3)
         } catch {
             hasError = true
+
             statusMessage =
                 "Unable to restore defaults: "
                 + error.localizedDescription
+
+            BuddyLogger.error(
+                "Unable to restore defaults: "
+                + error.localizedDescription,
+                category: .settings
+            )
         }
+    }
+
+    private func updateSavedSnapshot() {
+        savedSettings = settings
+        savedFastTestingEnabled = fastTestingEnabled
+        savedTestIntervalSeconds = testIntervalSeconds
     }
 
     private func validateSettings() -> Bool {
@@ -177,9 +246,13 @@ final class SettingsViewModel: ObservableObject {
         clearStatusTask?.cancel()
 
         clearStatusTask = Task { [weak self] in
-            try? await Task.sleep(
-                for: .seconds(seconds)
-            )
+            do {
+                try await Task.sleep(
+                    for: .seconds(seconds)
+                )
+            } catch {
+                return
+            }
 
             guard !Task.isCancelled else {
                 return

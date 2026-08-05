@@ -1,6 +1,6 @@
 import Foundation
 
-struct WellnessSettings: Codable {
+struct WellnessSettings: Codable, Equatable {
     var hydration: HydrationSettings
 
     static let `default` = WellnessSettings(

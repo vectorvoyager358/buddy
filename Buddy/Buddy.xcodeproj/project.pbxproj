@@ -37,6 +37,10 @@
 		C1EEC31D30227B8B00417AB5 /* DeveloperSettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1EEC31C30227B8900417AB5 /* DeveloperSettingsStore.swift */; };
 		C1EEC3213022F6F000417AB5 /* BuddyOrbView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1EEC3203022F6EE00417AB5 /* BuddyOrbView.swift */; };
 		C1EEC3573022FAE300417AB5 /* BuddyPanelPositionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1EEC3563022FAE100417AB5 /* BuddyPanelPositionStore.swift */; };
+		C1EEC3593022FCBA00417AB5 /* ReminderRuntimeStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1EEC3583022FCB800417AB5 /* ReminderRuntimeStore.swift */; };
+		C1EEC35B3022FCFA00417AB5 /* MenuBarViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1EEC35A3022FCF900417AB5 /* MenuBarViewModel.swift */; };
+		C1EEC35D3022FD1A00417AB5 /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1EEC35C3022FD1600417AB5 /* MenuBarView.swift */; };
+		C1EEC35F3023015100417AB5 /* ReminderSoundPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1EEC35E3023015000417AB5 /* ReminderSoundPlayer.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -93,6 +97,10 @@
 		C1EEC31C30227B8900417AB5 /* DeveloperSettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeveloperSettingsStore.swift; sourceTree = "<group>"; };
 		C1EEC3203022F6EE00417AB5 /* BuddyOrbView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuddyOrbView.swift; sourceTree = "<group>"; };
 		C1EEC3563022FAE100417AB5 /* BuddyPanelPositionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuddyPanelPositionStore.swift; sourceTree = "<group>"; };
+		C1EEC3583022FCB800417AB5 /* ReminderRuntimeStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReminderRuntimeStore.swift; sourceTree = "<group>"; };
+		C1EEC35A3022FCF900417AB5 /* MenuBarViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarViewModel.swift; sourceTree = "<group>"; };
+		C1EEC35C3022FD1600417AB5 /* MenuBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarView.swift; sourceTree = "<group>"; };
+		C1EEC35E3023015000417AB5 /* ReminderSoundPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReminderSoundPlayer.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -203,6 +211,7 @@
 		C1A556D4301C395E0046A637 /* Managers */ = {
 			isa = PBXGroup;
 			children = (
+				C1EEC35E3023015000417AB5 /* ReminderSoundPlayer.swift */,
 				C1EEC31630212D0500417AB5 /* ReminderScheduleCalculator.swift */,
 				C1EEC2FE30212AB100417AB5 /* BuddyLogger.swift */,
 				C1EEC2E63021170500417AB5 /* HydrationScheduler.swift */,
@@ -216,6 +225,7 @@
 		C1A556D5301C396B0046A637 /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
+				C1EEC35A3022FCF900417AB5 /* MenuBarViewModel.swift */,
 				C1EEC2D830210B9300417AB5 /* SettingsViewModel.swift */,
 				C1A556CC301C31AC0046A637 /* BuddyViewModel.swift */,
 			);
@@ -225,6 +235,7 @@
 		C1A556D6301C39750046A637 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				C1EEC35C3022FD1600417AB5 /* MenuBarView.swift */,
 				C1EEC3203022F6EE00417AB5 /* BuddyOrbView.swift */,
 				C1EEC2DE30210CB500417AB5 /* WeekdaySelector.swift */,
 				C1EEC2DC30210C9A00417AB5 /* WorkingHoursSection.swift */,
@@ -261,6 +272,7 @@
 		C1EEC2D530210AE600417AB5 /* Storage */ = {
 			isa = PBXGroup;
 			children = (
+				C1EEC3583022FCB800417AB5 /* ReminderRuntimeStore.swift */,
 				C1EEC3563022FAE100417AB5 /* BuddyPanelPositionStore.swift */,
 				C1EEC31C30227B8900417AB5 /* DeveloperSettingsStore.swift */,
 				C1EEC2D330210AE600417AB5 /* ReminderStorage.swift */,
@@ -420,7 +432,9 @@
 				C1EEC31D30227B8B00417AB5 /* DeveloperSettingsStore.swift in Sources */,
 				C1EEC2FF30212AB300417AB5 /* BuddyLogger.swift in Sources */,
 				C1869D0A301C55E2006F21AD /* AnimationEngine.swift in Sources */,
+				C1EEC35F3023015100417AB5 /* ReminderSoundPlayer.swift in Sources */,
 				C1EEC3213022F6F000417AB5 /* BuddyOrbView.swift in Sources */,
+				C1EEC35B3022FCFA00417AB5 /* MenuBarViewModel.swift in Sources */,
 				C1EEC31730212D0700417AB5 /* ReminderScheduleCalculator.swift in Sources */,
 				C1EEC2DF30210CB700417AB5 /* WeekdaySelector.swift in Sources */,
 				C1EEC2E73021170600417AB5 /* HydrationScheduler.swift in Sources */,
@@ -429,10 +443,12 @@
 				C1EEC2D730210AE700417AB5 /* WellnessSettingsStorage.swift in Sources */,
 				C1A556C2301C2C1D0046A637 /* SettingsView.swift in Sources */,
 				C1A556CE301C31AF0046A637 /* BuddyViewModel.swift in Sources */,
+				C1EEC3593022FCBA00417AB5 /* ReminderRuntimeStore.swift in Sources */,
 				C1A556BC301C2B920046A637 /* AppDelegate.swift in Sources */,
 				C1A55696301C2A120046A637 /* BuddyView.swift in Sources */,
 				C1A556C8301C316E0046A637 /* BuddyState.swift in Sources */,
 				C1A55694301C2A120046A637 /* BuddyApp.swift in Sources */,
+				C1EEC35D3022FD1A00417AB5 /* MenuBarView.swift in Sources */,
 				C1A556BF301C2BC30046A637 /* BuddyPanel.swift in Sources */,
 				C1EEC2CC30210A3D00417AB5 /* HydrationSettings.swift in Sources */,
 				C1EEC2DB30210C5800417AB5 /* HydrationSettingsSection.swift in Sources */,

@@ -1,6 +1,6 @@
 import Foundation
 
-struct HydrationSettings: Codable {
+struct HydrationSettings: Codable, Equatable {
     var isEnabled: Bool
     var intervalMinutes: Int
 
