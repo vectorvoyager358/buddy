@@ -5,8 +5,21 @@ final class ReminderRuntimeStore {
         static let remindersPaused =
             "buddy.runtime.remindersPaused"
 
+        // Legacy key retained temporarily for compatibility.
         static let nextHydrationReminderDate =
             "buddy.runtime.nextHydrationReminderDate"
+
+        static let nextReminderDate =
+            "buddy.runtime.nextReminderDate"
+
+        static let nextReminderDefinitionID =
+            "buddy.runtime.nextReminderDefinitionID"
+
+        static let nextReminderTitle =
+            "buddy.runtime.nextReminderTitle"
+
+        static let nextReminderCategory =
+            "buddy.runtime.nextReminderCategory"
 
         static let buddyVisible =
             "buddy.runtime.buddyVisible"
@@ -35,24 +48,115 @@ final class ReminderRuntimeStore {
         }
     }
 
+    /// Legacy hydration-only runtime value.
+    ///
+    /// Keep this property until the old HydrationScheduler and any
+    /// remaining hydration-specific menu code are removed.
     var nextHydrationReminderDate: Date? {
         get {
             defaults.object(
-                forKey: Keys.nextHydrationReminderDate
+                forKey:
+                    Keys.nextHydrationReminderDate
             ) as? Date
+        }
+
+        set {
+            setOptionalDate(
+                newValue,
+                forKey:
+                    Keys.nextHydrationReminderDate
+            )
+        }
+    }
+
+    var nextReminderDate: Date? {
+        get {
+            defaults.object(
+                forKey: Keys.nextReminderDate
+            ) as? Date
+        }
+
+        set {
+            setOptionalDate(
+                newValue,
+                forKey:
+                    Keys.nextReminderDate
+            )
+        }
+    }
+
+    var nextReminderDefinitionID: UUID? {
+        get {
+            guard let rawValue =
+                defaults.string(
+                    forKey:
+                        Keys.nextReminderDefinitionID
+                )
+            else {
+                return nil
+            }
+
+            return UUID(
+                uuidString: rawValue
+            )
         }
 
         set {
             if let newValue {
                 defaults.set(
-                    newValue,
-                    forKey: Keys.nextHydrationReminderDate
+                    newValue.uuidString,
+                    forKey:
+                        Keys.nextReminderDefinitionID
                 )
             } else {
                 defaults.removeObject(
-                    forKey: Keys.nextHydrationReminderDate
+                    forKey:
+                        Keys.nextReminderDefinitionID
                 )
             }
+        }
+    }
+
+    var nextReminderTitle: String? {
+        get {
+            defaults.string(
+                forKey:
+                    Keys.nextReminderTitle
+            )
+        }
+
+        set {
+            setOptionalString(
+                newValue,
+                forKey:
+                    Keys.nextReminderTitle
+            )
+        }
+    }
+
+    var nextReminderCategory:
+        ReminderCategory? {
+        get {
+            guard let rawValue =
+                defaults.string(
+                    forKey:
+                        Keys.nextReminderCategory
+                )
+            else {
+                return nil
+            }
+
+            return ReminderCategory(
+                rawValue: rawValue
+            )
+        }
+
+        set {
+            setOptionalString(
+                newValue?.rawValue,
+                forKey:
+                    Keys.nextReminderCategory
+            )
         }
     }
 
@@ -73,6 +177,62 @@ final class ReminderRuntimeStore {
             defaults.set(
                 newValue,
                 forKey: Keys.buddyVisible
+            )
+        }
+    }
+
+    func saveNextReminder(
+        definition: ReminderDefinition,
+        date: Date
+    ) {
+        nextReminderDefinitionID =
+            definition.id
+
+        nextReminderTitle =
+            definition.title
+
+        nextReminderCategory =
+            definition.category
+
+        nextReminderDate =
+            date
+    }
+
+    func clearNextReminder() {
+        nextReminderDefinitionID = nil
+        nextReminderTitle = nil
+        nextReminderCategory = nil
+        nextReminderDate = nil
+    }
+
+    private func setOptionalDate(
+        _ value: Date?,
+        forKey key: String
+    ) {
+        if let value {
+            defaults.set(
+                value,
+                forKey: key
+            )
+        } else {
+            defaults.removeObject(
+                forKey: key
+            )
+        }
+    }
+
+    private func setOptionalString(
+        _ value: String?,
+        forKey key: String
+    ) {
+        if let value {
+            defaults.set(
+                value,
+                forKey: key
+            )
+        } else {
+            defaults.removeObject(
+                forKey: key
             )
         }
     }

@@ -1,10 +1,14 @@
 import SwiftUI
 
 struct BuddyView: View {
-    @ObservedObject var viewModel: BuddyViewModel
-    @ObservedObject var animationEngine: AnimationEngine
+    @ObservedObject var viewModel:
+        BuddyViewModel
 
-    let reminderManager: ReminderManager
+    @ObservedObject var animationEngine:
+        AnimationEngine
+
+    let reminderManager:
+        ReminderManager
 
     @State private var isHovering = false
 
@@ -45,8 +49,10 @@ struct BuddyView: View {
 
     private var idleBubble: some View {
         HStack(spacing: 8) {
-            Image(systemName: "circle.dotted")
-                .foregroundStyle(.blue)
+            Image(
+                systemName: "circle.dotted"
+            )
+            .foregroundStyle(.blue)
 
             Text("Buddy is active")
                 .font(
@@ -62,7 +68,8 @@ struct BuddyView: View {
             Capsule()
                 .fill(.regularMaterial)
                 .shadow(
-                    color: .black.opacity(0.10),
+                    color:
+                        .black.opacity(0.10),
                     radius: 8,
                     y: 3
                 )
@@ -80,96 +87,20 @@ struct BuddyView: View {
             alignment: .leading,
             spacing: 16
         ) {
-            HStack(
-                alignment: .center,
-                spacing: 12
-            ) {
-                ZStack {
-                    Circle()
-                        .fill(
-                            Color.blue.opacity(0.14)
-                        )
-                        .frame(
-                            width: 46,
-                            height: 46
-                        )
+            reminderHeader(reminder)
 
-                    Image(systemName: "drop.fill")
-                        .font(.system(size: 21))
-                        .foregroundStyle(.blue)
-                }
+            Text(reminder.message)
+                .font(.system(size: 14))
+                .foregroundStyle(
+                    .primary.opacity(0.88)
+                )
+                .fixedSize(
+                    horizontal: false,
+                    vertical: true
+                )
+                .lineSpacing(3)
 
-                VStack(
-                    alignment: .leading,
-                    spacing: 3
-                ) {
-                    Text("Time to hydrate")
-                        .font(
-                            .system(
-                                size: 17,
-                                weight: .semibold
-                            )
-                        )
-
-                    Text("A quick wellness break")
-                        .font(.system(size: 12))
-                        .foregroundStyle(.secondary)
-                }
-
-                Spacer()
-            }
-
-            Text(
-                "You've been focused for a while. "
-                + "Take a moment to drink some water."
-            )
-            .font(.system(size: 14))
-            .foregroundStyle(
-                .primary.opacity(0.88)
-            )
-            .fixedSize(
-                horizontal: false,
-                vertical: true
-            )
-            .lineSpacing(3)
-
-            HStack(spacing: 9) {
-                Button {
-                    reminderManager.complete(reminder)
-                } label: {
-                    Label(
-                        "Done",
-                        systemImage: "checkmark"
-                    )
-                    .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-
-                Button {
-                    reminderManager.snooze(
-                        reminder,
-                        for: snoozeDuration
-                    )
-                } label: {
-                    Label(
-                        "Snooze",
-                        systemImage: "clock"
-                    )
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.large)
-
-                Button {
-                    reminderManager.skip(reminder)
-                } label: {
-                    Image(
-                        systemName: "forward.end"
-                    )
-                }
-                .buttonStyle(.borderless)
-                .help("Skip this reminder")
-            }
+            reminderActions(reminder)
         }
         .padding(18)
         .frame(width: 310)
@@ -199,17 +130,148 @@ struct BuddyView: View {
             .move(edge: .bottom)
                 .combined(with: .opacity)
                 .combined(
-                    with: .scale(scale: 0.96)
+                    with:
+                        .scale(scale: 0.96)
                 )
         )
+    }
+
+    private func reminderHeader(
+        _ reminder: Reminder
+    ) -> some View {
+        HStack(
+            alignment: .center,
+            spacing: 12
+        ) {
+            ZStack {
+                Circle()
+                    .fill(
+                        reminderColor(
+                            for: reminder
+                        )
+                        .opacity(0.14)
+                    )
+                    .frame(
+                        width: 46,
+                        height: 46
+                    )
+
+                Image(
+                    systemName:
+                        reminder.type.systemImage
+                )
+                .font(.system(size: 21))
+                .foregroundStyle(
+                    reminderColor(
+                        for: reminder
+                    )
+                )
+            }
+
+            VStack(
+                alignment: .leading,
+                spacing: 3
+            ) {
+                Text(
+                    reminder.type.headerTitle
+                )
+                .font(
+                    .system(
+                        size: 17,
+                        weight: .semibold
+                    )
+                )
+
+                Text(
+                    reminder.type.subtitle
+                )
+                .font(.system(size: 12))
+                .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+        }
+    }
+
+    @ViewBuilder
+    private func reminderActions(
+        _ reminder: Reminder
+    ) -> some View {
+        HStack(spacing: 9) {
+            if reminder.actions.allowsDone {
+                Button {
+                    reminderManager.complete(
+                        reminder
+                    )
+                } label: {
+                    Label(
+                        "Done",
+                        systemImage: "checkmark"
+                    )
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .tint(
+                    reminderColor(
+                        for: reminder
+                    )
+                )
+            }
+
+            if let remindLaterMinutes =
+                reminder.actions
+                    .remindLaterMinutes {
+                Button {
+                    reminderManager.snooze(
+                        reminder,
+                        for:
+                            remindLaterDuration(
+                                minutes:
+                                    remindLaterMinutes
+                            )
+                    )
+                } label: {
+                    Label(
+                        remindLaterTitle(
+                            for: reminder,
+                            minutes:
+                                remindLaterMinutes
+                        ),
+                        systemImage: "clock"
+                    )
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.large)
+            }
+
+            if reminder.actions.allowsSkip {
+                Button {
+                    reminderManager.skip(
+                        reminder
+                    )
+                } label: {
+                    Image(
+                        systemName:
+                            "forward.end"
+                    )
+                }
+                .buttonStyle(.borderless)
+                .help("Skip this reminder")
+            }
+        }
     }
 
     private func feedbackBubble(
         _ message: String
     ) -> some View {
         HStack(spacing: 9) {
-            Image(systemName: feedbackIcon)
-                .foregroundStyle(feedbackColor)
+            Image(
+                systemName: feedbackIcon
+            )
+            .foregroundStyle(
+                feedbackColor
+            )
 
             Text(message)
                 .font(
@@ -218,7 +280,9 @@ struct BuddyView: View {
                         weight: .medium
                     )
                 )
-                .multilineTextAlignment(.leading)
+                .multilineTextAlignment(
+                    .leading
+                )
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 11)
@@ -230,7 +294,8 @@ struct BuddyView: View {
             )
             .fill(.regularMaterial)
             .shadow(
-                color: .black.opacity(0.10),
+                color:
+                    .black.opacity(0.10),
                 radius: 10,
                 y: 4
             )
@@ -251,7 +316,8 @@ struct BuddyView: View {
         }
     }
 
-    private var visualState: BuddyVisualState {
+    private var visualState:
+        BuddyVisualState {
         switch viewModel.state {
         case .idle:
             return stateFromAnimation
@@ -264,9 +330,12 @@ struct BuddyView: View {
         }
     }
 
-    private var stateFromAnimation: BuddyVisualState {
-        switch animationEngine.currentAnimation {
-        case .idle, .wave:
+    private var stateFromAnimation:
+        BuddyVisualState {
+        switch animationEngine
+            .currentAnimation {
+        case .idle,
+             .wave:
             return .idle
 
         case .celebrate:
@@ -283,15 +352,19 @@ struct BuddyView: View {
     private var feedbackIcon: String {
         switch visualState {
         case .completed:
-            return "checkmark.circle.fill"
+            return
+                "checkmark.circle.fill"
 
-        case .snoozed, .sleeping:
+        case .snoozed,
+             .sleeping:
             return "clock.fill"
 
         case .skipped:
-            return "forward.end.circle.fill"
+            return
+                "forward.end.circle.fill"
 
-        case .idle, .reminder:
+        case .idle,
+             .reminder:
             return "circle.dotted"
         }
     }
@@ -301,44 +374,132 @@ struct BuddyView: View {
         case .completed:
             return .green
 
-        case .snoozed, .sleeping:
+        case .snoozed,
+             .sleeping:
             return .indigo
 
         case .skipped:
             return .secondary
 
-        case .idle, .reminder:
+        case .idle,
+             .reminder:
             return .blue
         }
     }
 
-    private var snoozeDuration: TimeInterval {
+    private func remindLaterTitle(
+        for reminder: Reminder,
+        minutes: Int
+    ) -> String {
+        switch reminder.type {
+        case .water:
+            return "Snooze"
+
+        case .supplement:
+            return
+                "Remind in \(minutes) min"
+
+        case .stretch,
+             .eyeBreak,
+             .walk,
+             .custom:
+            return
+                "Remind in \(minutes) min"
+        }
+    }
+
+    private func remindLaterDuration(
+        minutes: Int
+    ) -> TimeInterval {
         let developerSettings =
             DeveloperSettingsStore()
 
-        if developerSettings.fastTestingEnabled {
+        if developerSettings
+            .fastTestingEnabled {
             return TimeInterval(
-                developerSettings.testIntervalSeconds
+                developerSettings
+                    .testIntervalSeconds
             )
         }
 
-        return 10 * 60
+        return TimeInterval(
+            minutes * 60
+        )
+    }
+
+    private func reminderColor(
+        for reminder: Reminder
+    ) -> Color {
+        switch reminder.type {
+        case .water:
+            return .blue
+
+        case .supplement:
+            return .purple
+
+        case .stretch:
+            return .orange
+
+        case .eyeBreak:
+            return .indigo
+
+        case .walk:
+            return .green
+
+        case .custom:
+            return .blue
+        }
     }
 }
 
-#Preview {
-    let animationEngine = AnimationEngine()
-
-    let viewModel = BuddyViewModel(
-        animationEngine: animationEngine
+#Preview("Hydration") {
+    makeBuddyPreview(
+        reminder: Reminder(
+            title: "Drink Water",
+            message:
+                "Take a moment to drink some water.",
+            type: .water
+        )
     )
+}
 
-    BuddyView(
-        viewModel: viewModel,
-        animationEngine: animationEngine,
-        reminderManager: ReminderManager(
+#Preview("Supplement") {
+    makeBuddyPreview(
+        reminder: Reminder(
+            title: "Vitamin D",
+            message:
+                "It is time to take Vitamin D.",
+            type: .supplement,
+            actions: .supplement
+        )
+    )
+}
+
+@MainActor
+private func makeBuddyPreview(
+    reminder: Reminder
+) -> some View {
+    let animationEngine =
+        AnimationEngine()
+
+    let viewModel =
+        BuddyViewModel(
+            animationEngine:
+                animationEngine
+        )
+
+    let manager =
+        ReminderManager(
             buddyViewModel: viewModel
         )
+
+    viewModel.showReminder(reminder)
+
+    return BuddyView(
+        viewModel: viewModel,
+        animationEngine:
+            animationEngine,
+        reminderManager: manager
     )
     .frame(
         width: 340,

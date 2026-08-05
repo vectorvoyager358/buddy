@@ -7,16 +7,17 @@ final class AppDelegate:
     NSApplicationDelegate,
     NSWindowDelegate {
 
-    private var buddyPanel: BuddyPanel?
+    private var buddyPanel:
+        BuddyPanel?
 
     private let animationEngine =
         AnimationEngine()
+    
+    private let developerSettingsStore =
+        DeveloperSettingsStore()
 
     private let settingsStorage =
         WellnessSettingsStorage()
-
-    private let developerSettingsStore =
-        DeveloperSettingsStore()
 
     private let runtimeStore =
         ReminderRuntimeStore()
@@ -32,11 +33,17 @@ final class AppDelegate:
     private var reminderManager:
         ReminderManager!
 
-    private var hydrationScheduler:
-        HydrationScheduler!
+    private var genericScheduler:
+        GenericReminderScheduler!
 
     private var hideAfterActionTask:
         Task<Void, Never>?
+
+    private var deferredQueuedReminder:
+        QueuedReminder?
+
+    private var isShowingActionFeedback =
+        false
 
     private var isMovingPanelProgrammatically =
         false
@@ -57,7 +64,7 @@ final class AppDelegate:
         NotificationManager.shared
             .requestPermission()
 
-        hydrationScheduler.start()
+        startGenericScheduler()
 
         BuddyLogger.info(
             "Buddy started successfully.",
@@ -76,7 +83,9 @@ final class AppDelegate:
         hideAfterActionTask?.cancel()
 
         saveCurrentPanelPosition()
-        hydrationScheduler.stop()
+
+        genericScheduler.stop()
+        reminderManager.cancelAll()
 
         NotificationCenter.default.removeObserver(
             self
@@ -94,17 +103,28 @@ final class AppDelegate:
                 buddyViewModel: buddyViewModel
             )
 
-        hydrationScheduler =
-            HydrationScheduler(
-                storage: settingsStorage,
+        genericScheduler =
+            GenericReminderScheduler(
+                scheduleCalculator:
+                    ReminderScheduleCalculator(),
+                reminderQueue:
+                    ReminderQueue(),
+                runtimeStore:
+                    runtimeStore,
                 developerSettingsStore:
-                    developerSettingsStore,
-                runtimeStore: runtimeStore,
-                reminderManager: reminderManager
+                    developerSettingsStore
             )
     }
 
     private func connectCallbacks() {
+        genericScheduler.onReminderReady = {
+            [weak self] queuedReminder in
+
+            self?.handleQueuedReminderReady(
+                queuedReminder
+            )
+        }
+
         reminderManager.onReminderTriggered = {
             [weak self] in
 
@@ -116,48 +136,165 @@ final class AppDelegate:
             self?.showBuddyForReminder()
         }
 
-        reminderManager.onReminderResolved = {
-            [weak self] in
-
-            BuddyLogger.debug(
-                "Preparing to hide Buddy after reminder feedback.",
-                category: .reminders
-            )
-
-            self?.hideBuddyAfterFeedbackDelay()
-        }
-
         reminderManager.onReminderCompleted = {
             [weak self] reminder in
 
-            guard reminder.type == .water else {
-                return
-            }
+            BuddyLogger.debug(
+                "Completing generic reminder occurrence: \(reminder.title).",
+                category: .reminders
+            )
 
-            self?.hydrationScheduler
-                .hydrationCompleted()
+            self?.genericScheduler
+                .dismissCurrentReminder()
+
+            self?.beginActionFeedbackTransition()
         }
 
         reminderManager.onReminderSnoozed = {
-            [weak self] reminder in
+            [weak self] reminder,
+            seconds in
 
-            guard reminder.type == .water else {
-                return
-            }
+            BuddyLogger.debug(
+                "Postponing generic reminder occurrence: \(reminder.title).",
+                category: .reminders
+            )
 
-            self?.hydrationScheduler
-                .hydrationSnoozed()
+            self?.genericScheduler
+                .postponeCurrentReminder(
+                    for: seconds
+                )
+
+            self?.beginActionFeedbackTransition()
         }
 
         reminderManager.onReminderSkipped = {
             [weak self] reminder in
 
-            guard reminder.type == .water else {
-                return
+            BuddyLogger.debug(
+                "Skipping generic reminder occurrence: \(reminder.title).",
+                category: .reminders
+            )
+
+            self?.genericScheduler
+                .dismissCurrentReminder()
+
+            self?.beginActionFeedbackTransition()
+        }
+    }
+
+    private func startGenericScheduler() {
+        let settings =
+            settingsStorage.load()
+
+        genericScheduler.start(
+            definitions: settings.reminders
+        )
+    }
+
+    private func reloadGenericScheduler() {
+        let settings =
+            settingsStorage.load()
+
+        genericScheduler.reload(
+            definitions: settings.reminders
+        )
+    }
+
+    private func handleQueuedReminderReady(
+        _ queuedReminder: QueuedReminder
+    ) {
+        guard !isShowingActionFeedback else {
+            deferredQueuedReminder =
+                queuedReminder
+
+            BuddyLogger.debug(
+                "Deferred '\(queuedReminder.definition.title)' until action feedback finishes.",
+                category: .reminders
+            )
+
+            return
+        }
+
+        presentQueuedReminder(
+            queuedReminder
+        )
+    }
+
+    private func presentQueuedReminder(
+        _ queuedReminder: QueuedReminder
+    ) {
+        deferredQueuedReminder = nil
+
+        let reminder =
+            Reminder(
+                queuedReminder:
+                    queuedReminder
+            )
+
+        reminderManager.present(
+            reminder
+        )
+    }
+
+    private func beginActionFeedbackTransition() {
+        hideAfterActionTask?.cancel()
+
+        isShowingActionFeedback =
+            true
+
+        hideAfterActionTask =
+            Task {
+                [weak self] in
+
+                do {
+                    try await Task.sleep(
+                        for: .milliseconds(1_500)
+                    )
+                } catch {
+                    return
+                }
+
+                guard !Task.isCancelled,
+                      let self
+                else {
+                    return
+                }
+
+                finishActionFeedbackTransition()
+            }
+    }
+
+    private func finishActionFeedbackTransition() {
+        isShowingActionFeedback =
+            false
+
+        if let deferredQueuedReminder {
+            presentQueuedReminder(
+                deferredQueuedReminder
+            )
+
+            return
+        }
+
+        if genericScheduler.currentReminder
+            != nil {
+            if let current =
+                genericScheduler
+                    .currentReminder {
+                presentQueuedReminder(
+                    current
+                )
             }
 
-            self?.hydrationScheduler
-                .hydrationSkipped()
+            return
+        }
+
+        let next =
+            genericScheduler
+                .presentNextReminderIfAvailable()
+
+        if next == nil {
+            hideBuddyAfterAction()
         }
     }
 
@@ -218,11 +355,12 @@ final class AppDelegate:
         _ notification: Notification
     ) {
         BuddyLogger.info(
-            "Wellness settings changed. Reloading scheduler.",
+            "Wellness settings changed. Reloading generic scheduler.",
             category: .settings
         )
 
-        hydrationScheduler.reload()
+        deferredQueuedReminder = nil
+        reloadGenericScheduler()
     }
 
     @objc
@@ -236,7 +374,8 @@ final class AppDelegate:
             category: .scheduler
         )
 
-        hydrationScheduler.reload()
+        deferredQueuedReminder = nil
+        reloadGenericScheduler()
     }
 
     @objc
@@ -354,8 +493,11 @@ final class AppDelegate:
     private func reminderPanelOrigin(
         for panelSize: NSSize
     ) -> NSPoint {
-        let horizontalMargin: CGFloat = 24
-        let verticalMargin: CGFloat = 24
+        let horizontalMargin:
+            CGFloat = 24
+
+        let verticalMargin:
+            CGFloat = 24
 
         guard let screen =
             activeScreen()
@@ -380,7 +522,8 @@ final class AppDelegate:
         )
     }
 
-    private func activeScreen() -> NSScreen? {
+    private func activeScreen()
+        -> NSScreen? {
         let mouseLocation =
             NSEvent.mouseLocation
 
@@ -399,10 +542,11 @@ final class AppDelegate:
         _ proposedOrigin: NSPoint,
         panelSize: NSSize
     ) -> NSPoint {
-        let proposedFrame = NSRect(
-            origin: proposedOrigin,
-            size: panelSize
-        )
+        let proposedFrame =
+            NSRect(
+                origin: proposedOrigin,
+                size: panelSize
+            )
 
         let targetScreen =
             NSScreen.screens.first {
@@ -461,10 +605,11 @@ final class AppDelegate:
                 for: buddyPanel.frame.size
             )
 
-        let startingOrigin = NSPoint(
-            x: finalOrigin.x + 22,
-            y: finalOrigin.y
-        )
+        let startingOrigin =
+            NSPoint(
+                x: finalOrigin.x + 22,
+                y: finalOrigin.y
+            )
 
         buddyPanel.alphaValue = 0
 
@@ -483,6 +628,7 @@ final class AppDelegate:
             context in
 
             context.duration = 0.26
+
             context.timingFunction =
                 CAMediaTimingFunction(
                     name: .easeOut
@@ -505,27 +651,6 @@ final class AppDelegate:
         )
     }
 
-    private func hideBuddyAfterFeedbackDelay() {
-        hideAfterActionTask?.cancel()
-
-        hideAfterActionTask =
-            Task { [weak self] in
-                do {
-                    try await Task.sleep(
-                        for: .milliseconds(1_500)
-                    )
-                } catch {
-                    return
-                }
-
-                guard !Task.isCancelled else {
-                    return
-                }
-
-                self?.hideBuddyAfterAction()
-            }
-    }
-
     private func hideBuddyAfterAction() {
         guard let buddyPanel else {
             return
@@ -535,6 +660,7 @@ final class AppDelegate:
             context in
 
             context.duration = 0.20
+
             context.timingFunction =
                 CAMediaTimingFunction(
                     name: .easeIn
@@ -624,7 +750,8 @@ final class AppDelegate:
             isVisible
 
         NotificationCenter.default.post(
-            name: .buddyVisibilityDidChange,
+            name:
+                .buddyVisibilityDidChange,
             object: nil
         )
     }

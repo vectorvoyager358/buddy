@@ -21,7 +21,7 @@ struct MenuBarView: View {
             Divider()
                 .padding(.vertical, 10)
 
-            hydrationStatus
+            reminderStatus
 
             Divider()
                 .padding(.vertical, 10)
@@ -51,14 +51,16 @@ struct MenuBarView: View {
                         height: 38
                     )
 
-                Image(systemName: "circle.dotted")
-                    .font(
-                        .system(
-                            size: 18,
-                            weight: .medium
-                        )
+                Image(
+                    systemName: "circle.dotted"
+                )
+                .font(
+                    .system(
+                        size: 18,
+                        weight: .medium
                     )
-                    .foregroundStyle(.white)
+                )
+                .foregroundStyle(.white)
             }
 
             VStack(
@@ -90,14 +92,16 @@ struct MenuBarView: View {
         }
     }
 
-    private var hydrationStatus: some View {
+    private var reminderStatus: some View {
         VStack(
             alignment: .leading,
             spacing: 9
         ) {
             Label(
-                "Hydration",
-                systemImage: "drop.fill"
+                viewModel.reminderSectionTitle,
+                systemImage:
+                    viewModel
+                        .reminderSectionSystemImage
             )
             .font(
                 .system(
@@ -105,14 +109,20 @@ struct MenuBarView: View {
                     weight: .semibold
                 )
             )
-            .foregroundStyle(.blue)
+            .foregroundStyle(
+                reminderColor
+            )
 
-            Text(viewModel.nextReminderText)
-                .font(.system(size: 13))
+            Text(
+                viewModel.nextReminderText
+            )
+            .font(.system(size: 13))
 
-            Text(viewModel.scheduleSummary)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            Text(
+                viewModel.scheduleSummary
+            )
+            .font(.caption)
+            .foregroundStyle(.secondary)
         }
         .frame(
             maxWidth: .infinity,
@@ -120,14 +130,39 @@ struct MenuBarView: View {
         )
     }
 
+    private var reminderColor: Color {
+        switch viewModel
+            .reminderSectionColor {
+        case .blue:
+            return .blue
+
+        case .purple:
+            return .purple
+
+        case .orange:
+            return .orange
+
+        case .indigo:
+            return .indigo
+
+        case .green:
+            return .green
+        }
+    }
+
     private var actions: some View {
         VStack(spacing: 3) {
             MenuActionButton(
-                title: viewModel.buddyActionTitle,
+                title:
+                    viewModel
+                        .buddyActionTitle,
                 systemImage:
-                    viewModel.buddyActionSystemImage
+                    viewModel
+                        .buddyActionSystemImage
             ) {
-                viewModel.toggleBuddyVisibility()
+                viewModel
+                    .toggleBuddyVisibility()
+
                 dismissMenuBar()
             }
 
@@ -197,12 +232,19 @@ private struct MenuActionButton: View {
             action: action
         ) {
             HStack(spacing: 10) {
-                Image(systemName: systemImage)
-                    .frame(width: 18)
-                    .foregroundStyle(iconColor)
+                Image(
+                    systemName:
+                        systemImage
+                )
+                .frame(width: 18)
+                .foregroundStyle(
+                    iconColor
+                )
 
                 Text(title)
-                    .foregroundStyle(textColor)
+                    .foregroundStyle(
+                        textColor
+                    )
 
                 Spacer()
             }
@@ -212,15 +254,19 @@ private struct MenuActionButton: View {
         }
         .buttonStyle(
             MenuActionButtonStyle(
-                isHovering: isHovering,
-                isDestructive: role == .destructive
+                isHovering:
+                    isHovering,
+                isDestructive:
+                    role == .destructive
             )
         )
         .onHover { hovering in
             isHovering = hovering
 
             if hovering {
-                NSCursor.pointingHand.push()
+                NSCursor
+                    .pointingHand
+                    .push()
             } else {
                 NSCursor.pop()
             }
@@ -228,7 +274,8 @@ private struct MenuActionButton: View {
     }
 
     private var iconColor: Color {
-        if role == .destructive && isHovering {
+        if role == .destructive
+            && isHovering {
             return .red
         }
 
@@ -238,7 +285,8 @@ private struct MenuActionButton: View {
     }
 
     private var textColor: Color {
-        if role == .destructive && isHovering {
+        if role == .destructive
+            && isHovering {
             return .red
         }
 
@@ -246,7 +294,9 @@ private struct MenuActionButton: View {
     }
 }
 
-private struct MenuActionButtonStyle: ButtonStyle {
+private struct MenuActionButtonStyle:
+    ButtonStyle {
+
     let isHovering: Bool
     let isDestructive: Bool
 
@@ -261,7 +311,9 @@ private struct MenuActionButtonStyle: ButtonStyle {
                 )
                 .fill(
                     backgroundColor(
-                        isPressed: configuration.isPressed
+                        isPressed:
+                            configuration
+                                .isPressed
                     )
                 )
             )
@@ -272,7 +324,9 @@ private struct MenuActionButtonStyle: ButtonStyle {
                 )
                 .stroke(
                     borderColor(
-                        isPressed: configuration.isPressed
+                        isPressed:
+                            configuration
+                                .isPressed
                     ),
                     lineWidth: 1
                 )
@@ -283,11 +337,17 @@ private struct MenuActionButtonStyle: ButtonStyle {
                     : 1
             )
             .animation(
-                .easeOut(duration: 0.10),
-                value: configuration.isPressed
+                .easeOut(
+                    duration: 0.10
+                ),
+                value:
+                    configuration
+                        .isPressed
             )
             .animation(
-                .easeOut(duration: 0.14),
+                .easeOut(
+                    duration: 0.14
+                ),
                 value: isHovering
             )
     }
@@ -298,13 +358,15 @@ private struct MenuActionButtonStyle: ButtonStyle {
         if isPressed {
             return isDestructive
                 ? Color.red.opacity(0.16)
-                : Color.accentColor.opacity(0.22)
+                : Color.accentColor
+                    .opacity(0.22)
         }
 
         if isHovering {
             return isDestructive
                 ? Color.red.opacity(0.09)
-                : Color.primary.opacity(0.08)
+                : Color.primary
+                    .opacity(0.08)
         }
 
         return .clear
@@ -316,11 +378,13 @@ private struct MenuActionButtonStyle: ButtonStyle {
         if isPressed {
             return isDestructive
                 ? Color.red.opacity(0.30)
-                : Color.accentColor.opacity(0.35)
+                : Color.accentColor
+                    .opacity(0.35)
         }
 
         if isHovering {
-            return Color.primary.opacity(0.08)
+            return Color.primary
+                .opacity(0.08)
         }
 
         return .clear

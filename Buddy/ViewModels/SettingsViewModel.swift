@@ -1,80 +1,169 @@
 import Combine
 import Foundation
+import SwiftUI
 
 @MainActor
-final class SettingsViewModel: ObservableObject {
-    @Published var settings: WellnessSettings
+final class SettingsViewModel:
+    ObservableObject {
 
-    @Published var fastTestingEnabled: Bool
-    @Published var testIntervalSeconds: Int
+    @Published var settings:
+        WellnessSettings
 
-    @Published private(set) var statusMessage: String?
-    @Published private(set) var hasError = false
+    @Published var fastTestingEnabled:
+        Bool
 
-    private let storage: WellnessSettingsStorage
-    private let developerSettingsStore: DeveloperSettingsStore
+    @Published var testIntervalSeconds:
+        Int
 
-    private var savedSettings: WellnessSettings
-    private var savedFastTestingEnabled: Bool
-    private var savedTestIntervalSeconds: Int
+    @Published private(set)
+    var statusMessage: String?
 
-    private var clearStatusTask: Task<Void, Never>?
+    @Published private(set)
+    var hasError = false
+
+    private let storage:
+        WellnessSettingsStorage
+
+    private let developerSettingsStore:
+        DeveloperSettingsStore
+
+    private var savedSettings:
+        WellnessSettings
+
+    private var savedFastTestingEnabled:
+        Bool
+
+    private var savedTestIntervalSeconds:
+        Int
+
+    private var clearStatusTask:
+        Task<Void, Never>?
 
     init(
-        storage: WellnessSettingsStorage,
-        developerSettingsStore: DeveloperSettingsStore
+        storage:
+            WellnessSettingsStorage,
+        developerSettingsStore:
+            DeveloperSettingsStore
     ) {
-        self.storage = storage
-        self.developerSettingsStore = developerSettingsStore
+        self.storage =
+            storage
 
-        let loadedSettings = storage.load()
+        self.developerSettingsStore =
+            developerSettingsStore
+
+        var loadedSettings =
+            storage.load()
+
+        loadedSettings
+            .ensureRequiredTemplates()
 
         let loadedFastTestingEnabled =
-            developerSettingsStore.fastTestingEnabled
+            developerSettingsStore
+                .fastTestingEnabled
 
         let loadedTestIntervalSeconds =
-            developerSettingsStore.testIntervalSeconds
+            developerSettingsStore
+                .testIntervalSeconds
 
-        settings = loadedSettings
-        fastTestingEnabled = loadedFastTestingEnabled
-        testIntervalSeconds = loadedTestIntervalSeconds
+        settings =
+            loadedSettings
 
-        savedSettings = loadedSettings
-        savedFastTestingEnabled = loadedFastTestingEnabled
-        savedTestIntervalSeconds = loadedTestIntervalSeconds
+        fastTestingEnabled =
+            loadedFastTestingEnabled
+
+        testIntervalSeconds =
+            loadedTestIntervalSeconds
+
+        savedSettings =
+            loadedSettings
+
+        savedFastTestingEnabled =
+            loadedFastTestingEnabled
+
+        savedTestIntervalSeconds =
+            loadedTestIntervalSeconds
     }
 
     convenience init() {
         self.init(
-            storage: WellnessSettingsStorage(),
-            developerSettingsStore: DeveloperSettingsStore()
+            storage:
+                WellnessSettingsStorage(),
+            developerSettingsStore:
+                DeveloperSettingsStore()
+        )
+    }
+
+    var supplementReminder:
+        ReminderDefinition {
+        get {
+            settings.supplementReminder
+                ?? ReminderTemplate
+                    .supplement
+                    .definition
+        }
+
+        set {
+            settings.updateSupplementReminder(
+                newValue
+            )
+        }
+    }
+
+    var supplementReminderBinding:
+        Binding<ReminderDefinition> {
+        Binding(
+            get: {
+                self.supplementReminder
+            },
+            set: {
+                self.supplementReminder =
+                    $0
+            }
         )
     }
 
     var hasUnsavedChanges: Bool {
         settings != savedSettings
-            || fastTestingEnabled != savedFastTestingEnabled
-            || testIntervalSeconds != savedTestIntervalSeconds
+            || fastTestingEnabled
+                != savedFastTestingEnabled
+            || testIntervalSeconds
+                != savedTestIntervalSeconds
     }
 
     func reloadFromStorage() {
         clearStatusTask?.cancel()
 
-        let loadedSettings = storage.load()
+        var loadedSettings =
+            storage.load()
+
+        loadedSettings
+            .ensureRequiredTemplates()
 
         let loadedFastTestingEnabled =
-            developerSettingsStore.fastTestingEnabled
+            developerSettingsStore
+                .fastTestingEnabled
 
         let loadedTestIntervalSeconds =
-            developerSettingsStore.testIntervalSeconds
+            developerSettingsStore
+                .testIntervalSeconds
 
-        settings = loadedSettings
-        fastTestingEnabled = loadedFastTestingEnabled
-        testIntervalSeconds = loadedTestIntervalSeconds
+        settings =
+            loadedSettings
 
-        savedSettings = loadedSettings
-        savedFastTestingEnabled = loadedFastTestingEnabled
-        savedTestIntervalSeconds = loadedTestIntervalSeconds
+        fastTestingEnabled =
+            loadedFastTestingEnabled
+
+        testIntervalSeconds =
+            loadedTestIntervalSeconds
+
+        savedSettings =
+            loadedSettings
+
+        savedFastTestingEnabled =
+            loadedFastTestingEnabled
+
+        savedTestIntervalSeconds =
+            loadedTestIntervalSeconds
 
         hasError = false
         statusMessage = nil
@@ -95,18 +184,30 @@ final class SettingsViewModel: ObservableObject {
         }
 
         do {
-            try storage.save(settings)
+            settings
+                .synchronizeLegacyHydrationReminder()
 
-            developerSettingsStore.fastTestingEnabled =
-                fastTestingEnabled
+            settings
+                .ensureRequiredTemplates()
 
-            developerSettingsStore.testIntervalSeconds =
-                testIntervalSeconds
+            try storage.save(
+                settings
+            )
+
+            developerSettingsStore
+                .fastTestingEnabled =
+                    fastTestingEnabled
+
+            developerSettingsStore
+                .testIntervalSeconds =
+                    testIntervalSeconds
 
             updateSavedSnapshot()
 
             hasError = false
-            statusMessage = "Settings saved successfully."
+
+            statusMessage =
+                "Settings saved successfully."
 
             BuddyLogger.info(
                 "Settings and developer options were saved.",
@@ -114,7 +215,9 @@ final class SettingsViewModel: ObservableObject {
             )
 
             notifySchedulerOfChanges()
-            clearStatusMessage(after: 3)
+            clearStatusMessage(
+                after: 3
+            )
         } catch {
             hasError = true
 
@@ -136,18 +239,24 @@ final class SettingsViewModel: ObservableObject {
         developerSettingsStore.reset()
 
         fastTestingEnabled =
-            developerSettingsStore.fastTestingEnabled
+            developerSettingsStore
+                .fastTestingEnabled
 
         testIntervalSeconds =
-            developerSettingsStore.testIntervalSeconds
+            developerSettingsStore
+                .testIntervalSeconds
 
         do {
-            try storage.save(settings)
+            try storage.save(
+                settings
+            )
 
             updateSavedSnapshot()
 
             hasError = false
-            statusMessage = "Default settings restored."
+
+            statusMessage =
+                "Default settings restored."
 
             BuddyLogger.notice(
                 "Default settings were restored.",
@@ -155,7 +264,9 @@ final class SettingsViewModel: ObservableObject {
             )
 
             notifySchedulerOfChanges()
-            clearStatusMessage(after: 3)
+            clearStatusMessage(
+                after: 3
+            )
         } catch {
             hasError = true
 
@@ -172,45 +283,106 @@ final class SettingsViewModel: ObservableObject {
     }
 
     private func updateSavedSnapshot() {
-        savedSettings = settings
-        savedFastTestingEnabled = fastTestingEnabled
-        savedTestIntervalSeconds = testIntervalSeconds
+        savedSettings =
+            settings
+
+        savedFastTestingEnabled =
+            fastTestingEnabled
+
+        savedTestIntervalSeconds =
+            testIntervalSeconds
     }
 
-    private func validateSettings() -> Bool {
-        guard settings.hydration.intervalMinutes > 0 else {
+    private func validateSettings()
+        -> Bool {
+        guard settings.hydration
+            .intervalMinutes > 0 else {
             showValidationError(
-                "The reminder interval must be greater than zero."
+                "The hydration interval must be greater than zero."
             )
 
             return false
         }
 
-        guard !settings.hydration.weekdays.isEmpty else {
+        guard !settings.hydration
+            .weekdays.isEmpty else {
             showValidationError(
-                "Select at least one active day."
+                "Select at least one active hydration day."
             )
 
             return false
         }
 
         let startMinutes =
-            settings.hydration.startHour * 60
-            + settings.hydration.startMinute
+            settings.hydration.startHour
+            * 60
+            + settings.hydration
+                .startMinute
 
         let endMinutes =
-            settings.hydration.endHour * 60
-            + settings.hydration.endMinute
+            settings.hydration.endHour
+            * 60
+            + settings.hydration
+                .endMinute
 
-        guard endMinutes > startMinutes else {
+        guard endMinutes
+            > startMinutes else {
             showValidationError(
-                "The end time must be later than the start time."
+                "The hydration end time must be later than the start time."
             )
 
             return false
         }
 
-        guard testIntervalSeconds >= 1 else {
+        let supplement =
+            supplementReminder
+
+        if supplement.isEnabled {
+            let trimmedName =
+                supplement.title
+                    .trimmingCharacters(
+                        in: .whitespacesAndNewlines
+                    )
+
+            guard !trimmedName.isEmpty else {
+                showValidationError(
+                    "Enter a supplement name."
+                )
+
+                return false
+            }
+
+            guard !supplement.weekdays
+                .isEmpty else {
+                showValidationError(
+                    "Select at least one active supplement day."
+                )
+
+                return false
+            }
+
+            guard case .fixedTimes(
+                let fixedSchedule
+            ) = supplement.schedule else {
+                showValidationError(
+                    "The supplement reminder must use exact daily times."
+                )
+
+                return false
+            }
+
+            guard !fixedSchedule
+                .times.isEmpty else {
+                showValidationError(
+                    "Add at least one supplement reminder time."
+                )
+
+                return false
+            }
+        }
+
+        guard testIntervalSeconds
+            >= 1 else {
             showValidationError(
                 "The test interval must be at least one second."
             )
@@ -235,30 +407,40 @@ final class SettingsViewModel: ObservableObject {
 
     private func notifySchedulerOfChanges() {
         NotificationCenter.default.post(
-            name: .wellnessSettingsDidChange,
+            name:
+                .wellnessSettingsDidChange,
             object: nil
         )
     }
 
     private func clearStatusMessage(
-        after seconds: TimeInterval
+        after seconds:
+            TimeInterval
     ) {
         clearStatusTask?.cancel()
 
-        clearStatusTask = Task { [weak self] in
-            do {
-                try await Task.sleep(
-                    for: .seconds(seconds)
-                )
-            } catch {
-                return
-            }
+        clearStatusTask =
+            Task {
+                [weak self] in
 
-            guard !Task.isCancelled else {
-                return
-            }
+                do {
+                    try await Task.sleep(
+                        for:
+                            .seconds(
+                                seconds
+                            )
+                    )
+                } catch {
+                    return
+                }
 
-            self?.statusMessage = nil
-        }
+                guard !Task.isCancelled
+                else {
+                    return
+                }
+
+                self?.statusMessage =
+                    nil
+            }
     }
 }
