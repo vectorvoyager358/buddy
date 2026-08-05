@@ -14,20 +14,27 @@ final class HydrationScheduler {
 
     init(
         storage: WellnessSettingsStorage,
-        developerSettingsStore:
-            DeveloperSettingsStore,
+        developerSettingsStore: DeveloperSettingsStore,
         reminderManager: ReminderManager,
-        scheduleCalculator:
-            ReminderScheduleCalculator =
-                ReminderScheduleCalculator()
+        scheduleCalculator: ReminderScheduleCalculator
     ) {
         self.storage = storage
-        self.developerSettingsStore =
-            developerSettingsStore
-
+        self.developerSettingsStore = developerSettingsStore
         self.reminderManager = reminderManager
-        self.scheduleCalculator =
-            scheduleCalculator
+        self.scheduleCalculator = scheduleCalculator
+    }
+
+    convenience init(
+        storage: WellnessSettingsStorage,
+        developerSettingsStore: DeveloperSettingsStore,
+        reminderManager: ReminderManager
+    ) {
+        self.init(
+            storage: storage,
+            developerSettingsStore: developerSettingsStore,
+            reminderManager: reminderManager,
+            scheduleCalculator: ReminderScheduleCalculator()
+        )
     }
 
     func start() {

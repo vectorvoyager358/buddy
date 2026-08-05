@@ -12,13 +12,15 @@ final class BuddyPanel: NSPanel {
             defer: false
         )
 
+        configurePanel()
+    }
+
+    private func configurePanel() {
         isOpaque = false
         backgroundColor = .clear
         hasShadow = false
 
         level = .floating
-        isFloatingPanel = true
-        hidesOnDeactivate = false
 
         collectionBehavior = [
             .canJoinAllSpaces,
@@ -26,8 +28,16 @@ final class BuddyPanel: NSPanel {
             .stationary
         ]
 
+        isMovable = true
         isMovableByWindowBackground = true
+
+        hidesOnDeactivate = false
         becomesKeyOnlyIfNeeded = true
+
+        animationBehavior = .none
+
+        titleVisibility = .hidden
+        titlebarAppearsTransparent = true
     }
 
     override var canBecomeKey: Bool {
