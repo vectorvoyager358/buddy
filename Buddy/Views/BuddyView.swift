@@ -11,7 +11,7 @@ struct BuddyView: View {
     var body: some View {
         VStack(spacing: 14) {
             messageArea
-            buddyCharacter
+            buddyOrb
         }
         .frame(
             width: 340,
@@ -45,11 +45,16 @@ struct BuddyView: View {
 
     private var idleBubble: some View {
         HStack(spacing: 8) {
-            Image(systemName: "sparkles")
-                .foregroundStyle(.yellow)
+            Image(systemName: "circle.dotted")
+                .foregroundStyle(.blue)
 
-            Text("Hi! I'm Buddy")
-                .font(.system(size: 14, weight: .medium))
+            Text("Buddy is active")
+                .font(
+                    .system(
+                        size: 13,
+                        weight: .medium
+                    )
+                )
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 9)
@@ -71,8 +76,14 @@ struct BuddyView: View {
     private func reminderCard(
         _ reminder: Reminder
     ) -> some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack(alignment: .center, spacing: 12) {
+        VStack(
+            alignment: .leading,
+            spacing: 16
+        ) {
+            HStack(
+                alignment: .center,
+                spacing: 12
+            ) {
                 ZStack {
                     Circle()
                         .fill(
@@ -88,7 +99,10 @@ struct BuddyView: View {
                         .foregroundStyle(.blue)
                 }
 
-                VStack(alignment: .leading, spacing: 3) {
+                VStack(
+                    alignment: .leading,
+                    spacing: 3
+                ) {
                     Text("Time to hydrate")
                         .font(
                             .system(
@@ -110,7 +124,9 @@ struct BuddyView: View {
                 + "Take a moment to drink some water."
             )
             .font(.system(size: 14))
-            .foregroundStyle(.primary.opacity(0.88))
+            .foregroundStyle(
+                .primary.opacity(0.88)
+            )
             .fixedSize(
                 horizontal: false,
                 vertical: true
@@ -133,7 +149,7 @@ struct BuddyView: View {
                 Button {
                     reminderManager.snooze(
                         reminder,
-                        for: 10
+                        for: snoozeDuration
                     )
                 } label: {
                     Label(
@@ -182,7 +198,9 @@ struct BuddyView: View {
         .transition(
             .move(edge: .bottom)
                 .combined(with: .opacity)
-                .combined(with: .scale(scale: 0.96))
+                .combined(
+                    with: .scale(scale: 0.96)
+                )
         )
     }
 
@@ -190,8 +208,8 @@ struct BuddyView: View {
         _ message: String
     ) -> some View {
         HStack(spacing: 9) {
-            Image(systemName: "checkmark.circle.fill")
-                .foregroundStyle(.green)
+            Image(systemName: feedbackIcon)
+                .foregroundStyle(feedbackColor)
 
             Text(message)
                 .font(
@@ -223,148 +241,88 @@ struct BuddyView: View {
         )
     }
 
-    private var buddyCharacter: some View {
-        ZStack {
-            Circle()
-                .fill(
-                    characterGradient
-                )
-                .frame(
-                    width: 138,
-                    height: 138
-                )
-                .overlay {
-                    Circle()
-                        .stroke(
-                            Color.white.opacity(0.25),
-                            lineWidth: 1
-                        )
-                }
-                .shadow(
-                    color: characterShadow,
-                    radius: 18,
-                    y: 9
-                )
-
-            VStack(spacing: 7) {
-                Text(
-                    animationEngine
-                        .currentAnimation
-                        .emoji
-                )
-                .font(.system(size: 60))
-
-                Text("Buddy")
-                    .font(
-                        .system(
-                            size: 14,
-                            weight: .semibold
-                        )
-                    )
-                    .foregroundStyle(.white)
-            }
-        }
-        .scaleEffect(
-            animationEngine.currentAnimation.scale
-            * (isHovering ? 1.045 : 1)
-        )
-        .rotationEffect(
-            .degrees(
-                animationEngine
-                    .currentAnimation
-                    .rotation
-            )
-        )
-        .animation(
-            .spring(
-                response: 0.36,
-                dampingFraction: 0.66
-            ),
-            value: animationEngine.currentAnimation
-        )
-        .animation(
-            .spring(
-                response: 0.30,
-                dampingFraction: 0.72
-            ),
-            value: isHovering
+    private var buddyOrb: some View {
+        BuddyOrbView(
+            state: visualState,
+            isHovering: isHovering
         )
         .onHover { hovering in
             isHovering = hovering
         }
     }
 
-    private var characterGradient: LinearGradient {
-        switch animationEngine.currentAnimation {
+    private var visualState: BuddyVisualState {
+        switch viewModel.state {
         case .idle:
-            return LinearGradient(
-                colors: [
-                    Color.blue.opacity(0.90),
-                    Color.indigo.opacity(0.88)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
+            return stateFromAnimation
 
-        case .wave:
-            return LinearGradient(
-                colors: [
-                    Color.orange.opacity(0.92),
-                    Color.pink.opacity(0.82)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
+        case .reminder:
+            return .reminder
 
-        case .celebrate:
-            return LinearGradient(
-                colors: [
-                    Color.green.opacity(0.88),
-                    Color.teal.opacity(0.88)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-
-        case .thinking:
-            return LinearGradient(
-                colors: [
-                    Color.purple.opacity(0.88),
-                    Color.indigo.opacity(0.86)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-
-        case .sleeping:
-            return LinearGradient(
-                colors: [
-                    Color.indigo.opacity(0.82),
-                    Color.black.opacity(0.70)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
+        case .happy:
+            return stateFromAnimation
         }
     }
 
-    private var characterShadow: Color {
+    private var stateFromAnimation: BuddyVisualState {
         switch animationEngine.currentAnimation {
-        case .idle:
-            return .blue.opacity(0.28)
-
-        case .wave:
-            return .orange.opacity(0.30)
+        case .idle, .wave:
+            return .idle
 
         case .celebrate:
-            return .green.opacity(0.30)
+            return .completed
 
         case .thinking:
-            return .purple.opacity(0.30)
+            return .skipped
 
         case .sleeping:
-            return .indigo.opacity(0.25)
+            return .snoozed
         }
+    }
+
+    private var feedbackIcon: String {
+        switch visualState {
+        case .completed:
+            return "checkmark.circle.fill"
+
+        case .snoozed, .sleeping:
+            return "clock.fill"
+
+        case .skipped:
+            return "forward.end.circle.fill"
+
+        case .idle, .reminder:
+            return "circle.dotted"
+        }
+    }
+
+    private var feedbackColor: Color {
+        switch visualState {
+        case .completed:
+            return .green
+
+        case .snoozed, .sleeping:
+            return .indigo
+
+        case .skipped:
+            return .secondary
+
+        case .idle, .reminder:
+            return .blue
+        }
+    }
+
+    private var snoozeDuration: TimeInterval {
+        let developerSettings =
+            DeveloperSettingsStore()
+
+        if developerSettings.fastTestingEnabled {
+            return TimeInterval(
+                developerSettings.testIntervalSeconds
+            )
+        }
+
+        return 10 * 60
     }
 }
 

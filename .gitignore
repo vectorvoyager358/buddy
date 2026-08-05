@@ -1,21 +1,26 @@
 # macOS
 .DS_Store
+**/.DS_Store
 
 # Xcode user data
 xcuserdata/
+**/xcuserdata/
 *.xcuserstate
 *.xcuserdatad
 
 # Xcode build products
 DerivedData/
+**/DerivedData/
 build/
+**/build/
 
 # Swift Package Manager
 .build/
-Package.resolved
+**/.build/
 
-# Archives
+# Xcode archives
 *.xcarchive
 
 # Debug symbols
 *.dSYM
+*.dSYM.zip

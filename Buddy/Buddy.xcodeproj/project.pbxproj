@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		C1618150301DAF3D00889015 /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = C161814F301DAF3600889015 /* .gitignore */; };
 		C1869D08301C558B006F21AD /* BuddyAnimation.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1869D07301C5586006F21AD /* BuddyAnimation.swift */; };
 		C1869D0A301C55E2006F21AD /* AnimationEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1869D09301C55DE006F21AD /* AnimationEngine.swift */; };
 		C1A55694301C2A120046A637 /* BuddyApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A55693301C2A120046A637 /* BuddyApp.swift */; };
@@ -36,6 +35,8 @@
 		C1EEC2FF30212AB300417AB5 /* BuddyLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1EEC2FE30212AB100417AB5 /* BuddyLogger.swift */; };
 		C1EEC31730212D0700417AB5 /* ReminderScheduleCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1EEC31630212D0500417AB5 /* ReminderScheduleCalculator.swift */; };
 		C1EEC31D30227B8B00417AB5 /* DeveloperSettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1EEC31C30227B8900417AB5 /* DeveloperSettingsStore.swift */; };
+		C1EEC3213022F6F000417AB5 /* BuddyOrbView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1EEC3203022F6EE00417AB5 /* BuddyOrbView.swift */; };
+		C1EEC3573022FAE300417AB5 /* BuddyPanelPositionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1EEC3563022FAE100417AB5 /* BuddyPanelPositionStore.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -90,24 +91,13 @@
 		C1EEC2FE30212AB100417AB5 /* BuddyLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuddyLogger.swift; sourceTree = "<group>"; };
 		C1EEC31630212D0500417AB5 /* ReminderScheduleCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReminderScheduleCalculator.swift; sourceTree = "<group>"; };
 		C1EEC31C30227B8900417AB5 /* DeveloperSettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeveloperSettingsStore.swift; sourceTree = "<group>"; };
+		C1EEC3203022F6EE00417AB5 /* BuddyOrbView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuddyOrbView.swift; sourceTree = "<group>"; };
+		C1EEC3563022FAE100417AB5 /* BuddyPanelPositionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuddyPanelPositionStore.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
-
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		C1EEC31B302131F100417AB5 /* Exceptions for "docs" folder in "BuddyTests" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				architecture/overview.md,
-			);
-			target = C1A5569C301C2A140046A637 /* BuddyTests */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		C1618144301DACD600889015 /* docs */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				C1EEC31B302131F100417AB5 /* Exceptions for "docs" folder in "BuddyTests" target */,
-			);
 			path = docs;
 			sourceTree = "<group>";
 		};
@@ -235,6 +225,7 @@
 		C1A556D6301C39750046A637 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				C1EEC3203022F6EE00417AB5 /* BuddyOrbView.swift */,
 				C1EEC2DE30210CB500417AB5 /* WeekdaySelector.swift */,
 				C1EEC2DC30210C9A00417AB5 /* WorkingHoursSection.swift */,
 				C1EEC2DA30210C5700417AB5 /* HydrationSettingsSection.swift */,
@@ -270,6 +261,7 @@
 		C1EEC2D530210AE600417AB5 /* Storage */ = {
 			isa = PBXGroup;
 			children = (
+				C1EEC3563022FAE100417AB5 /* BuddyPanelPositionStore.swift */,
 				C1EEC31C30227B8900417AB5 /* DeveloperSettingsStore.swift */,
 				C1EEC2D330210AE600417AB5 /* ReminderStorage.swift */,
 				C1EEC2D430210AE600417AB5 /* WellnessSettingsStorage.swift */,
@@ -405,7 +397,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C1618150301DAF3D00889015 /* .gitignore in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -423,11 +414,13 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C1EEC3573022FAE300417AB5 /* BuddyPanelPositionStore.swift in Sources */,
 				C1869D08301C558B006F21AD /* BuddyAnimation.swift in Sources */,
 				C1A556C5301C2EF00046A637 /* NotificationManager.swift in Sources */,
 				C1EEC31D30227B8B00417AB5 /* DeveloperSettingsStore.swift in Sources */,
 				C1EEC2FF30212AB300417AB5 /* BuddyLogger.swift in Sources */,
 				C1869D0A301C55E2006F21AD /* AnimationEngine.swift in Sources */,
+				C1EEC3213022F6F000417AB5 /* BuddyOrbView.swift in Sources */,
 				C1EEC31730212D0700417AB5 /* ReminderScheduleCalculator.swift in Sources */,
 				C1EEC2DF30210CB700417AB5 /* WeekdaySelector.swift in Sources */,
 				C1EEC2E73021170600417AB5 /* HydrationScheduler.swift in Sources */,
