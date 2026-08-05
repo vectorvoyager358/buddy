@@ -3,6 +3,7 @@ import Foundation
 @MainActor
 final class ReminderManager {
     private let notificationManager: NotificationManager
+    private let soundPlayer: ReminderSoundPlayer
     private let buddyViewModel: BuddyViewModel
 
     private var scheduledTasks: [
@@ -13,15 +14,15 @@ final class ReminderManager {
     var onReminderCompleted: ((Reminder) -> Void)?
     var onReminderSnoozed: ((Reminder) -> Void)?
     var onReminderSkipped: ((Reminder) -> Void)?
-
-    /// Called whenever Done, Snooze, or Skip is selected.
     var onReminderResolved: (() -> Void)?
 
     init(
         notificationManager: NotificationManager,
+        soundPlayer: ReminderSoundPlayer,
         buddyViewModel: BuddyViewModel
     ) {
         self.notificationManager = notificationManager
+        self.soundPlayer = soundPlayer
         self.buddyViewModel = buddyViewModel
     }
 
@@ -30,6 +31,7 @@ final class ReminderManager {
     ) {
         self.init(
             notificationManager: .shared,
+            soundPlayer: .shared,
             buddyViewModel: buddyViewModel
         )
     }
@@ -42,23 +44,27 @@ final class ReminderManager {
             reminderID: reminder.id
         )
 
+        let safeDelay = max(
+            seconds,
+            1
+        )
+
         BuddyLogger.info(
-            "Scheduling reminder '\(reminder.title)' "
-            + "after \(Int(seconds)) seconds.",
+            "Scheduling reminder '\(reminder.title)' after \(Int(safeDelay)) seconds.",
             category: .reminders
         )
 
         notificationManager.sendReminder(
             reminder,
-            after: seconds
+            after: safeDelay
         )
 
         let task = Task { [weak self] in
-            try? await Task.sleep(
-                for: .seconds(seconds)
-            )
-
-            guard !Task.isCancelled else {
+            do {
+                try await Task.sleep(
+                    for: .seconds(safeDelay)
+                )
+            } catch {
                 BuddyLogger.debug(
                     "Reminder task was cancelled: \(reminder.title).",
                     category: .reminders
@@ -67,7 +73,9 @@ final class ReminderManager {
                 return
             }
 
-            guard let self else {
+            guard !Task.isCancelled,
+                  let self
+            else {
                 return
             }
 
@@ -76,9 +84,16 @@ final class ReminderManager {
                 category: .reminders
             )
 
-            self.onReminderTriggered?()
-            self.buddyViewModel.showReminder(reminder)
-            self.scheduledTasks[reminder.id] = nil
+            // The alert sound is mandatory for every Buddy reminder.
+            soundPlayer.play()
+
+            buddyViewModel.showReminder(
+                reminder
+            )
+
+            onReminderTriggered?()
+
+            scheduledTasks[reminder.id] = nil
         }
 
         scheduledTasks[reminder.id] = task
@@ -93,7 +108,11 @@ final class ReminderManager {
         )
 
         buddyViewModel.completeReminder()
-        onReminderCompleted?(reminder)
+
+        onReminderCompleted?(
+            reminder
+        )
+
         onReminderResolved?()
     }
 
@@ -101,18 +120,25 @@ final class ReminderManager {
         _ reminder: Reminder,
         for seconds: TimeInterval
     ) {
+        let safeDelay = max(
+            seconds,
+            1
+        )
+
         BuddyLogger.info(
-            "Reminder snoozed: \(reminder.title) "
-            + "for \(Int(seconds)) seconds.",
+            "Reminder snoozed: \(reminder.title) for \(Int(safeDelay)) seconds.",
             category: .reminders
         )
 
         buddyViewModel.showSnoozeConfirmation()
-        onReminderSnoozed?(reminder)
+
+        onReminderSnoozed?(
+            reminder
+        )
 
         schedule(
             reminder,
-            after: seconds
+            after: safeDelay
         )
 
         onReminderResolved?()
@@ -127,7 +153,11 @@ final class ReminderManager {
         )
 
         buddyViewModel.skipReminder()
-        onReminderSkipped?(reminder)
+
+        onReminderSkipped?(
+            reminder
+        )
+
         onReminderResolved?()
     }
 
@@ -142,8 +172,7 @@ final class ReminderManager {
         )
 
         BuddyLogger.debug(
-            "Cancelled reminder with ID "
-            + reminderID.uuidString,
+            "Cancelled reminder with ID \(reminderID.uuidString).",
             category: .reminders
         )
     }
@@ -154,6 +183,7 @@ final class ReminderManager {
         }
 
         scheduledTasks.removeAll()
+
         notificationManager.cancelAll()
 
         BuddyLogger.info(

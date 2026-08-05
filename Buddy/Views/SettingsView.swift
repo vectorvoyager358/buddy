@@ -27,9 +27,7 @@ struct SettingsView: View {
             ScrollView {
                 VStack(spacing: 18) {
                     scheduleOverviewCard
-
                     hydrationCard
-
                     developerCard
                 }
                 .padding(20)
@@ -48,6 +46,13 @@ struct SettingsView: View {
         .background(
             Color(nsColor: .windowBackgroundColor)
         )
+        .animation(
+            .easeOut(duration: 0.16),
+            value: viewModel.hasUnsavedChanges
+        )
+        .onAppear {
+            viewModel.reloadFromStorage()
+        }
     }
 
     private var header: some View {
@@ -72,7 +77,7 @@ struct SettingsView: View {
                     height: 48
                 )
 
-                Image(systemName: "pawprint.fill")
+                Image(systemName: "circle.dotted")
                     .font(.system(size: 23))
                     .foregroundStyle(.white)
             }
@@ -222,23 +227,7 @@ struct SettingsView: View {
 
     private var footer: some View {
         HStack(spacing: 12) {
-            if let statusMessage =
-                viewModel.statusMessage {
-                Label(
-                    statusMessage,
-                    systemImage:
-                        viewModel.hasError
-                        ? "exclamationmark.triangle.fill"
-                        : "checkmark.circle.fill"
-                )
-                .font(.callout)
-                .foregroundStyle(
-                    viewModel.hasError
-                        ? Color.red
-                        : Color.green
-                )
-                .transition(.opacity)
-            }
+            statusArea
 
             Spacer()
 
@@ -246,17 +235,75 @@ struct SettingsView: View {
                 viewModel.resetToDefaults()
             }
 
-            Button("Save Changes") {
-                viewModel.save()
-            }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-            .keyboardShortcut(
-                "s",
-                modifiers: [.command]
-            )
+            saveButton
         }
         .padding(16)
+    }
+
+    @ViewBuilder
+    private var statusArea: some View {
+        if let statusMessage =
+            viewModel.statusMessage {
+            Label(
+                statusMessage,
+                systemImage:
+                    viewModel.hasError
+                    ? "exclamationmark.triangle.fill"
+                    : "checkmark.circle.fill"
+            )
+            .font(.callout)
+            .foregroundStyle(
+                viewModel.hasError
+                    ? Color.red
+                    : Color.green
+            )
+            .transition(.opacity)
+        } else if viewModel.hasUnsavedChanges {
+            Label(
+                "Unsaved changes",
+                systemImage: "circle.fill"
+            )
+            .font(.callout)
+            .foregroundStyle(.secondary)
+            .transition(.opacity)
+        }
+    }
+
+    private var saveButton: some View {
+        Button {
+            viewModel.save()
+        } label: {
+            Text("Save Changes")
+                .foregroundStyle(
+                    viewModel.hasUnsavedChanges
+                        ? Color.white
+                        : Color.primary.opacity(0.72)
+                )
+                .frame(minWidth: 105)
+        }
+        .buttonStyle(.borderedProminent)
+        .controlSize(.large)
+        .tint(
+            viewModel.hasUnsavedChanges
+                ? Color.accentColor
+                : Color.gray.opacity(0.45)
+        )
+        .disabled(
+            !viewModel.hasUnsavedChanges
+        )
+        .keyboardShortcut(
+            "s",
+            modifiers: [.command]
+        )
+        .help(
+            viewModel.hasUnsavedChanges
+                ? "Save your changes"
+                : "No unsaved changes"
+        )
+        .animation(
+            .easeOut(duration: 0.16),
+            value: viewModel.hasUnsavedChanges
+        )
     }
 
     private func scheduleMetric(
@@ -306,24 +353,121 @@ struct SettingsView: View {
     }
 
     private var selectedDaysText: String {
-        let weekdays =
+        let selectedWeekdays =
             viewModel.settings.hydration.weekdays
 
-        let workWeek: Set<Weekday> = [
-            .monday,
-            .tuesday,
-            .wednesday,
-            .thursday,
-            .friday
-        ]
-
-        if weekdays == workWeek {
-            return "Mon–Fri"
+        guard !selectedWeekdays.isEmpty else {
+            return "None"
         }
 
-        return Weekday.allCases
+        let orderedWeekdays =
+            Weekday.allCases
+
+        guard selectedWeekdays.count > 1 else {
+            return orderedWeekdays
+                .first {
+                    selectedWeekdays.contains($0)
+                }?
+                .shortName
+                ?? "None"
+        }
+
+        if selectedWeekdays.count
+            == orderedWeekdays.count {
+            guard let firstDay =
+                orderedWeekdays.first,
+                let lastDay =
+                orderedWeekdays.last
+            else {
+                return "None"
+            }
+
+            return
+                "\(firstDay.shortName)–\(lastDay.shortName)"
+        }
+
+        guard let startIndex =
+            orderedWeekdays.indices.first(
+                where: { index in
+                    let previousIndex =
+                        index
+                        == orderedWeekdays.startIndex
+                        ? orderedWeekdays.index(
+                            before:
+                                orderedWeekdays.endIndex
+                        )
+                        : orderedWeekdays.index(
+                            before: index
+                        )
+
+                    return selectedWeekdays.contains(
+                        orderedWeekdays[index]
+                    )
+                    && !selectedWeekdays.contains(
+                        orderedWeekdays[
+                            previousIndex
+                        ]
+                    )
+                }
+            )
+        else {
+            return individualDaysText(
+                selectedWeekdays,
+                orderedWeekdays:
+                    orderedWeekdays
+            )
+        }
+
+        var consecutiveDays: [Weekday] = []
+        var currentIndex = startIndex
+
+        while selectedWeekdays.contains(
+            orderedWeekdays[currentIndex]
+        ) {
+            consecutiveDays.append(
+                orderedWeekdays[currentIndex]
+            )
+
+            currentIndex =
+                orderedWeekdays.index(
+                    after: currentIndex
+                )
+
+            if currentIndex
+                == orderedWeekdays.endIndex {
+                currentIndex =
+                    orderedWeekdays.startIndex
+            }
+
+            if currentIndex == startIndex {
+                break
+            }
+        }
+
+        if consecutiveDays.count
+            == selectedWeekdays.count,
+           let firstDay =
+            consecutiveDays.first,
+           let lastDay =
+            consecutiveDays.last {
+            return
+                "\(firstDay.shortName)–\(lastDay.shortName)"
+        }
+
+        return individualDaysText(
+            selectedWeekdays,
+            orderedWeekdays:
+                orderedWeekdays
+        )
+    }
+
+    private func individualDaysText(
+        _ selectedWeekdays: Set<Weekday>,
+        orderedWeekdays: [Weekday]
+    ) -> String {
+        orderedWeekdays
             .filter {
-                weekdays.contains($0)
+                selectedWeekdays.contains($0)
             }
             .map(\.shortName)
             .joined(separator: ", ")
@@ -342,7 +486,11 @@ struct SettingsView: View {
                 from: components
             )
         else {
-            return "\(hour):\(minute)"
+            return String(
+                format: "%02d:%02d",
+                hour,
+                minute
+            )
         }
 
         return date.formatted(

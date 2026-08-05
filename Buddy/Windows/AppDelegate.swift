@@ -9,13 +9,17 @@ final class AppDelegate:
 
     private var buddyPanel: BuddyPanel?
 
-    private let animationEngine = AnimationEngine()
+    private let animationEngine =
+        AnimationEngine()
 
     private let settingsStorage =
         WellnessSettingsStorage()
 
     private let developerSettingsStore =
         DeveloperSettingsStore()
+
+    private let runtimeStore =
+        ReminderRuntimeStore()
 
     private let panelPositionStore =
         BuddyPanelPositionStore()
@@ -31,6 +35,12 @@ final class AppDelegate:
     private var hydrationScheduler:
         HydrationScheduler!
 
+    private var hideAfterActionTask:
+        Task<Void, Never>?
+
+    private var isMovingPanelProgrammatically =
+        false
+
     func applicationDidFinishLaunching(
         _ notification: Notification
     ) {
@@ -42,7 +52,7 @@ final class AppDelegate:
         createDependencies()
         connectCallbacks()
         createBuddyPanel()
-        observeSettingsChanges()
+        observeNotifications()
 
         NotificationManager.shared
             .requestPermission()
@@ -50,7 +60,7 @@ final class AppDelegate:
         hydrationScheduler.start()
 
         BuddyLogger.info(
-            "Buddy started in reminder-only mode.",
+            "Buddy started successfully.",
             category: .app
         )
     }
@@ -58,23 +68,27 @@ final class AppDelegate:
     func applicationWillTerminate(
         _ notification: Notification
     ) {
-        saveCurrentPanelPosition()
+        BuddyLogger.info(
+            "Buddy is terminating.",
+            category: .app
+        )
 
+        hideAfterActionTask?.cancel()
+
+        saveCurrentPanelPosition()
         hydrationScheduler.stop()
 
         NotificationCenter.default.removeObserver(
-            self,
-            name: .wellnessSettingsDidChange,
-            object: nil
-        )
-
-        BuddyLogger.info(
-            "Buddy terminated.",
-            category: .app
+            self
         )
     }
 
     private func createDependencies() {
+        BuddyLogger.debug(
+            "Creating Buddy dependencies.",
+            category: .app
+        )
+
         reminderManager =
             ReminderManager(
                 buddyViewModel: buddyViewModel
@@ -85,8 +99,8 @@ final class AppDelegate:
                 storage: settingsStorage,
                 developerSettingsStore:
                     developerSettingsStore,
-                reminderManager:
-                    reminderManager
+                runtimeStore: runtimeStore,
+                reminderManager: reminderManager
             )
     }
 
@@ -95,7 +109,7 @@ final class AppDelegate:
             [weak self] in
 
             BuddyLogger.notice(
-                "Showing Buddy for a reminder.",
+                "Showing Buddy because a reminder triggered.",
                 category: .reminders
             )
 
@@ -105,7 +119,12 @@ final class AppDelegate:
         reminderManager.onReminderResolved = {
             [weak self] in
 
-            self?.hideBuddyAfterAction()
+            BuddyLogger.debug(
+                "Preparing to hide Buddy after reminder feedback.",
+                category: .reminders
+            )
+
+            self?.hideBuddyAfterFeedbackDelay()
         }
 
         reminderManager.onReminderCompleted = {
@@ -142,7 +161,7 @@ final class AppDelegate:
         }
     }
 
-    private func observeSettingsChanges() {
+    private func observeNotifications() {
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(
@@ -151,13 +170,94 @@ final class AppDelegate:
             name: .wellnessSettingsDidChange,
             object: nil
         )
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(
+                reminderPauseStateDidChange(_:)
+            ),
+            name: .reminderPauseStateDidChange,
+            object: nil
+        )
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(
+                showBuddyRequested(_:)
+            ),
+            name: .showBuddyRequested,
+            object: nil
+        )
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(
+                hideBuddyRequested(_:)
+            ),
+            name: .hideBuddyRequested,
+            object: nil
+        )
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(
+                quitBuddyRequested(_:)
+            ),
+            name: .quitBuddyRequested,
+            object: nil
+        )
+
+        BuddyLogger.debug(
+            "Started observing Buddy notifications.",
+            category: .app
+        )
     }
 
     @objc
     private func wellnessSettingsDidChange(
         _ notification: Notification
     ) {
+        BuddyLogger.info(
+            "Wellness settings changed. Reloading scheduler.",
+            category: .settings
+        )
+
         hydrationScheduler.reload()
+    }
+
+    @objc
+    private func reminderPauseStateDidChange(
+        _ notification: Notification
+    ) {
+        BuddyLogger.info(
+            runtimeStore.remindersPaused
+                ? "Reminder pause state changed to paused."
+                : "Reminder pause state changed to active.",
+            category: .scheduler
+        )
+
+        hydrationScheduler.reload()
+    }
+
+    @objc
+    private func showBuddyRequested(
+        _ notification: Notification
+    ) {
+        showBuddy()
+    }
+
+    @objc
+    private func hideBuddyRequested(
+        _ notification: Notification
+    ) {
+        hideBuddy()
+    }
+
+    @objc
+    private func quitBuddyRequested(
+        _ notification: Notification
+    ) {
+        quitBuddy()
     }
 
     private func createBuddyPanel() {
@@ -175,20 +275,29 @@ final class AppDelegate:
 
         panel.delegate = self
 
-        panel.contentView = NSHostingView(
-            rootView: BuddyView(
-                viewModel: buddyViewModel,
-                animationEngine: animationEngine,
-                reminderManager: reminderManager
+        panel.contentView =
+            NSHostingView(
+                rootView: BuddyView(
+                    viewModel: buddyViewModel,
+                    animationEngine:
+                        animationEngine,
+                    reminderManager:
+                        reminderManager
+                )
             )
-        )
 
-        positionPanel(panel)
+        positionPanelAtSavedLocation(
+            panel
+        )
 
         panel.alphaValue = 1
         panel.orderFrontRegardless()
 
         buddyPanel = panel
+
+        updateBuddyVisibility(
+            true
+        )
 
         BuddyLogger.info(
             "Buddy panel was created and shown.",
@@ -196,7 +305,7 @@ final class AppDelegate:
         )
     }
 
-    private func positionPanel(
+    private func positionPanelAtSavedLocation(
         _ panel: BuddyPanel
     ) {
         let proposedOrigin =
@@ -205,12 +314,13 @@ final class AppDelegate:
                 for: panel.frame.size
             )
 
-        let safeOrigin = clampedOrigin(
-            proposedOrigin,
-            panelSize: panel.frame.size
+        setPanelOrigin(
+            clampedOrigin(
+                proposedOrigin,
+                panelSize: panel.frame.size
+            ),
+            for: panel
         )
-
-        panel.setFrameOrigin(safeOrigin)
     }
 
     private func defaultPanelOrigin(
@@ -219,8 +329,7 @@ final class AppDelegate:
         let margin: CGFloat = 24
 
         guard let screen =
-            NSScreen.main
-            ?? NSScreen.screens.first
+            activeScreen()
         else {
             return NSPoint(
                 x: 100,
@@ -228,7 +337,8 @@ final class AppDelegate:
             )
         }
 
-        let visibleFrame = screen.visibleFrame
+        let visibleFrame =
+            screen.visibleFrame
 
         return NSPoint(
             x:
@@ -239,6 +349,50 @@ final class AppDelegate:
                 visibleFrame.minY
                 + margin
         )
+    }
+
+    private func reminderPanelOrigin(
+        for panelSize: NSSize
+    ) -> NSPoint {
+        let horizontalMargin: CGFloat = 24
+        let verticalMargin: CGFloat = 24
+
+        guard let screen =
+            activeScreen()
+        else {
+            return defaultPanelOrigin(
+                for: panelSize
+            )
+        }
+
+        let visibleFrame =
+            screen.visibleFrame
+
+        return NSPoint(
+            x:
+                visibleFrame.maxX
+                - panelSize.width
+                - horizontalMargin,
+            y:
+                visibleFrame.maxY
+                - panelSize.height
+                - verticalMargin
+        )
+    }
+
+    private func activeScreen() -> NSScreen? {
+        let mouseLocation =
+            NSEvent.mouseLocation
+
+        return NSScreen.screens.first {
+            NSMouseInRect(
+                mouseLocation,
+                $0.frame,
+                false
+            )
+        }
+        ?? NSScreen.main
+        ?? NSScreen.screens.first
     }
 
     private func clampedOrigin(
@@ -256,8 +410,7 @@ final class AppDelegate:
                     proposedFrame
                 )
             }
-            ?? NSScreen.main
-            ?? NSScreen.screens.first
+            ?? activeScreen()
 
         guard let targetScreen else {
             return proposedOrigin
@@ -266,13 +419,17 @@ final class AppDelegate:
         let visibleFrame =
             targetScreen.visibleFrame
 
-        let maximumX =
+        let maximumX = max(
+            visibleFrame.minX,
             visibleFrame.maxX
-            - panelSize.width
+                - panelSize.width
+        )
 
-        let maximumY =
+        let maximumY = max(
+            visibleFrame.minY,
             visibleFrame.maxY
-            - panelSize.height
+                - panelSize.height
+        )
 
         return NSPoint(
             x: min(
@@ -293,25 +450,80 @@ final class AppDelegate:
     }
 
     private func showBuddyForReminder() {
+        hideAfterActionTask?.cancel()
+
         guard let buddyPanel else {
             return
         }
 
-        let safeOrigin = clampedOrigin(
-            buddyPanel.frame.origin,
-            panelSize: buddyPanel.frame.size
+        let finalOrigin =
+            reminderPanelOrigin(
+                for: buddyPanel.frame.size
+            )
+
+        let startingOrigin = NSPoint(
+            x: finalOrigin.x + 22,
+            y: finalOrigin.y
         )
 
-        buddyPanel.setFrameOrigin(safeOrigin)
         buddyPanel.alphaValue = 0
+
+        setPanelOrigin(
+            startingOrigin,
+            for: buddyPanel
+        )
+
         buddyPanel.orderFrontRegardless()
+
+        updateBuddyVisibility(
+            true
+        )
 
         NSAnimationContext.runAnimationGroup {
             context in
 
-            context.duration = 0.20
-            buddyPanel.animator().alphaValue = 1
+            context.duration = 0.26
+            context.timingFunction =
+                CAMediaTimingFunction(
+                    name: .easeOut
+                )
+
+            buddyPanel
+                .animator()
+                .alphaValue = 1
+
+            buddyPanel
+                .animator()
+                .setFrameOrigin(
+                    finalOrigin
+                )
         }
+
+        BuddyLogger.debug(
+            "Buddy reminder entered at the top-right of the active screen.",
+            category: .app
+        )
+    }
+
+    private func hideBuddyAfterFeedbackDelay() {
+        hideAfterActionTask?.cancel()
+
+        hideAfterActionTask =
+            Task { [weak self] in
+                do {
+                    try await Task.sleep(
+                        for: .milliseconds(1_500)
+                    )
+                } catch {
+                    return
+                }
+
+                guard !Task.isCancelled else {
+                    return
+                }
+
+                self?.hideBuddyAfterAction()
+            }
     }
 
     private func hideBuddyAfterAction() {
@@ -319,20 +531,79 @@ final class AppDelegate:
             return
         }
 
-        saveCurrentPanelPosition()
-
         NSAnimationContext.runAnimationGroup {
             context in
 
-            context.duration = 0.18
-            buddyPanel.animator().alphaValue = 0
+            context.duration = 0.20
+            context.timingFunction =
+                CAMediaTimingFunction(
+                    name: .easeIn
+                )
+
+            buddyPanel
+                .animator()
+                .alphaValue = 0
+
+            buddyPanel
+                .animator()
+                .setFrameOrigin(
+                    NSPoint(
+                        x:
+                            buddyPanel.frame.origin.x
+                            + 16,
+                        y:
+                            buddyPanel.frame.origin.y
+                    )
+                )
         } completionHandler: {
             [weak self] in
 
             Task { @MainActor in
-                self?.buddyPanel?.orderOut(nil)
-                self?.buddyPanel?.alphaValue = 1
+                guard let self else {
+                    return
+                }
+
+                buddyPanel.orderOut(nil)
+                buddyPanel.alphaValue = 1
+
+                self.updateBuddyVisibility(
+                    false
+                )
             }
+        }
+    }
+
+    private func movePanelIntoVisibleScreen(
+        _ panel: BuddyPanel
+    ) {
+        let safeOrigin =
+            clampedOrigin(
+                panel.frame.origin,
+                panelSize: panel.frame.size
+            )
+
+        setPanelOrigin(
+            safeOrigin,
+            for: panel
+        )
+    }
+
+    private func setPanelOrigin(
+        _ origin: NSPoint,
+        for panel: BuddyPanel
+    ) {
+        isMovingPanelProgrammatically =
+            true
+
+        panel.setFrameOrigin(
+            origin
+        )
+
+        DispatchQueue.main.async {
+            [weak self] in
+
+            self?.isMovingPanelProgrammatically =
+                false
         }
     }
 
@@ -346,9 +617,25 @@ final class AppDelegate:
         )
     }
 
+    private func updateBuddyVisibility(
+        _ isVisible: Bool
+    ) {
+        runtimeStore.buddyVisible =
+            isVisible
+
+        NotificationCenter.default.post(
+            name: .buddyVisibilityDidChange,
+            object: nil
+        )
+    }
+
     func windowDidMove(
         _ notification: Notification
     ) {
+        guard !isMovingPanelProgrammatically else {
+            return
+        }
+
         saveCurrentPanelPosition()
     }
 
@@ -359,36 +646,66 @@ final class AppDelegate:
             return
         }
 
-        let safeOrigin = clampedOrigin(
-            buddyPanel.frame.origin,
-            panelSize: buddyPanel.frame.size
+        movePanelIntoVisibleScreen(
+            buddyPanel
         )
 
-        buddyPanel.setFrameOrigin(safeOrigin)
+        guard !isMovingPanelProgrammatically else {
+            return
+        }
+
         saveCurrentPanelPosition()
     }
 
     func showBuddy() {
+        hideAfterActionTask?.cancel()
+
         guard let buddyPanel else {
             return
         }
 
-        let safeOrigin = clampedOrigin(
-            buddyPanel.frame.origin,
-            panelSize: buddyPanel.frame.size
+        positionPanelAtSavedLocation(
+            buddyPanel
         )
 
-        buddyPanel.setFrameOrigin(safeOrigin)
         buddyPanel.alphaValue = 1
         buddyPanel.orderFrontRegardless()
+
+        updateBuddyVisibility(
+            true
+        )
+
+        BuddyLogger.debug(
+            "Buddy was shown at its saved location.",
+            category: .app
+        )
     }
 
     func hideBuddy() {
+        hideAfterActionTask?.cancel()
+
         saveCurrentPanelPosition()
+
         buddyPanel?.orderOut(nil)
+
+        updateBuddyVisibility(
+            false
+        )
+
+        BuddyLogger.debug(
+            "Buddy was hidden.",
+            category: .app
+        )
     }
 
     func quitBuddy() {
-        NSApplication.shared.terminate(nil)
+        BuddyLogger.info(
+            "Quit Buddy was selected.",
+            category: .app
+        )
+
+        NSApplication.shared.terminate(
+            nil
+        )
     }
 }
